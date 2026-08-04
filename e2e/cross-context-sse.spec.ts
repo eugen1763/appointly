@@ -201,7 +201,7 @@ test("an owner receives a guest vote and suggestion through SSE without reloadin
       exact: true,
     });
     const addOptionToggle = page.getByRole("button", {
-      name: "＋ Add an option",
+      name: "Add an option",
       exact: true,
     });
     await expect(initialResponseGroup).toBeVisible();

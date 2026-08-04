@@ -694,6 +694,8 @@ export function AppointmentComposer({
                             value={start}
                             onChange={(event) => updateDayTime(day, "start", event.target.value)}
                             disabled={submitting}
+                            aria-invalid={spanInvalid}
+                            aria-describedby={spanInvalid ? `composer-chip-error-${day}` : undefined}
                           />
                           {endTime !== "" && (
                             <>
@@ -822,7 +824,12 @@ export function AppointmentComposer({
                       onChange={(event) => updateAdvanced("coOrganizerEmail", () => setCoOrganizerEmail(event.target.value))}
                       disabled={submitting || atCoOrganizerLimit}
                       aria-invalid={Boolean(advancedErrors.coOrganizerEmail)}
-                      aria-describedby={advancedErrors.coOrganizerEmail ? "composer-co-organizer-email-error" : undefined}
+                      /* The list-level error names this same control, so it is
+                         announced here too rather than being orphaned. */
+                      aria-describedby={[
+                        advancedErrors.coOrganizerEmail ? "composer-co-organizer-email-error" : "",
+                        advancedErrors.coOrganizerEmails ? "composer-co-organizers-error" : "",
+                      ].filter(Boolean).join(" ") || undefined}
                     />
                     {advancedErrors.coOrganizerEmail && (
                       <p className={styles.fieldError} id="composer-co-organizer-email-error" role="alert">

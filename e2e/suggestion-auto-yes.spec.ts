@@ -91,7 +91,7 @@ test("a guest suggestion creates its automatic Yes without a response PUT", asyn
   });
   await expect(initialResponseGroup).toBeVisible();
   await expect(page.getByRole("button", {
-    name: "＋ Add an option",
+    name: "Add an option",
     exact: true,
   })).toBeVisible();
 

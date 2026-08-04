@@ -202,7 +202,9 @@ export function InlineOptionAdd({
         aria-expanded={open}
         onClick={() => setOpen(!open)}
       >
-        ＋ Add an option
+        {/* The glyph is decoration; leaving it in the name made screen readers
+            announce "fullwidth plus sign" before the action. */}
+        <span aria-hidden="true">＋ </span>Add an option
       </button>
       {open ? (
         <div className={styles.addOptionPanel} id="add-option-panel">

@@ -206,4 +206,26 @@ describe("AppointmentDescriptionEditor", () => {
     expect(textarea().value).toBe("Late edit");
     expect(onSaved).not.toHaveBeenCalled();
   });
+
+  it("names the error from the textarea so it is announced with the field", async () => {
+    fetchMock.mockResolvedValue(jsonResponse({
+      error: {
+        code: "APPOINTMENT_FINALIZED",
+        message: "Reopen the appointment before changing appointment details.",
+      },
+    }, 409));
+    await renderEditor();
+    await beginEdit();
+
+    expect(textarea().getAttribute("aria-invalid")).toBe("false");
+    expect(textarea().getAttribute("aria-describedby")).toBeNull();
+
+    await type("Late edit");
+    await save();
+
+    const alert = container.querySelector('[role="alert"]');
+    expect(alert?.id).toBe("description-edit-error");
+    expect(textarea().getAttribute("aria-invalid")).toBe("true");
+    expect(textarea().getAttribute("aria-describedby")).toBe("description-edit-error");
+  });
 });

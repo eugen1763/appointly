@@ -186,7 +186,7 @@ async function expectFinalizedReadOnly(
 
   await expect(page.getByRole("radio")).toHaveCount(0);
   await expect(page.getByRole("button", {
-    name: "＋ Add an option",
+    name: "Add an option",
     exact: true,
   })).toHaveCount(0);
   await expect(page.getByRole("form", {
@@ -309,7 +309,7 @@ test("finalized participant writes are immutable until the owner reopens", async
   ).toHaveText("Saved");
 
   const addOptionToggle = page.getByRole("button", {
-    name: "＋ Add an option",
+    name: "Add an option",
     exact: true,
   });
   const optionsPath = `/api/appointments/${created.publicId}/options`;

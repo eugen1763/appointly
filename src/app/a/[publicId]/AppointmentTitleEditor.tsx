@@ -133,6 +133,8 @@ export function AppointmentTitleEditor({
     <>
       <h1 className={styles.titleEditing}>
         <input
+          aria-describedby={error !== null ? "title-edit-error" : undefined}
+          aria-invalid={error !== null}
           aria-label="Appointment title"
           defaultValue={title}
           disabled={pending}
@@ -144,7 +146,7 @@ export function AppointmentTitleEditor({
         />
       </h1>
       {error ? (
-        <p className={styles.titleEditError} role="alert">{error}</p>
+        <p className={styles.titleEditError} id="title-edit-error" role="alert">{error}</p>
       ) : null}
     </>
   );

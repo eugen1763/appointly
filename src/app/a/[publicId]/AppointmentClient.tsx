@@ -290,6 +290,7 @@ function useOptionDeletion({
         aria-busy={pendingOptionId !== null}
         aria-describedby="delete-confirmation-description"
         aria-labelledby="delete-confirmation-heading"
+        aria-modal="true"
         className={styles.deleteDialog}
         data-delete-dialog
         ref={dialogRef}

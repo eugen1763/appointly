@@ -29,7 +29,7 @@ const INITIAL_DATE_LABEL = "June 10, 2034";
 const FIRST_SUGGESTED_DATE_LABEL = "June 11, 2034";
 const SECOND_SUGGESTED_DATE_LABEL = "June 12, 2034";
 const GUEST_SESSION_COOKIE_NAME = "appointly_guest_session";
-const ADD_OPTION_TOGGLE = "＋ Add an option";
+const ADD_OPTION_TOGGLE = "Add an option";
 const PARTICIPANT_LIMIT_MESSAGE = "This appointment already has 200 participants.";
 
 function waitForExactPost(page: Page, path: string): Promise<Response> {

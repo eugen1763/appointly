@@ -127,6 +127,8 @@ export function AppointmentDescriptionEditor({
   return (
     <form className={styles.descriptionEditor} onSubmit={submit}>
       <textarea
+        aria-describedby={error !== null ? "description-edit-error" : undefined}
+        aria-invalid={error !== null}
         aria-label="Appointment description"
         defaultValue={description ?? ""}
         disabled={pending}
@@ -143,7 +145,7 @@ export function AppointmentDescriptionEditor({
         </button>
       </div>
       {error ? (
-        <p className={styles.descriptionEditError} role="alert">{error}</p>
+        <p className={styles.descriptionEditError} id="description-edit-error" role="alert">{error}</p>
       ) : null}
     </form>
   );

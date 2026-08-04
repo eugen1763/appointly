@@ -155,7 +155,7 @@ test("only a suggested option's creator can delete it", async ({
     exact: true,
   })).toBeVisible();
   await expect(page.getByRole("button", {
-    name: "＋ Add an option",
+    name: "Add an option",
     exact: true,
   })).toBeVisible();
   const optionsPath = `/api/appointments/${created.publicId}/options`;

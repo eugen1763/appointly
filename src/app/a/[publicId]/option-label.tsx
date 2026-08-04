@@ -40,8 +40,10 @@ export function TimedOptionLabel({ option }: Readonly<{ option: TimedOption }>) 
   }, [option]);
 
   if (!formatted) {
+    // No aria-label here: it is prohibited on a generic span and never
+    // exposed, and the visible text already names this placeholder.
     return (
-      <span className={styles.timePending} aria-label="Time shown in your browser time zone">
+      <span className={styles.timePending}>
         Local time
       </span>
     );

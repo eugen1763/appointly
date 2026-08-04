@@ -403,7 +403,7 @@ export async function expectSegmentFocusRing(
   ).toBe(true);
 }
 
-const ADD_OPTION_TOGGLE_NAME = "＋ Add an option";
+const ADD_OPTION_TOGGLE_NAME = "Add an option";
 const ADD_OPTION_ROUTE = /\/api\/appointments\/[A-Za-z0-9_-]{24}\/options$/u;
 
 /**

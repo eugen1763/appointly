@@ -245,6 +245,23 @@ describe("AppointmentTitleEditor", () => {
     expect(alertText()).toBe("The change was not saved. Check your connection and try again.");
   });
 
+  it("names the error from the input so it is announced with the field", async () => {
+    fetchMock.mockResolvedValue(jsonResponse({ error: { code: "TEAPOT" } }, 500));
+    await renderEditor();
+    await beginEdit();
+
+    expect(input().getAttribute("aria-invalid")).toBe("false");
+    expect(input().getAttribute("aria-describedby")).toBeNull();
+
+    await type("Broken");
+    await pressEnter();
+
+    const alert = container.querySelector('[role="alert"]');
+    expect(alert?.id).toBe("title-edit-error");
+    expect(input().getAttribute("aria-invalid")).toBe("true");
+    expect(input().getAttribute("aria-describedby")).toBe("title-edit-error");
+  });
+
   it("blocks a second submit while the first is in flight", async () => {
     const deferred = deferredResponse();
     fetchMock.mockReturnValue(deferred.promise);
