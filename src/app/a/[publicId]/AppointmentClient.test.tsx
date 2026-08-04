@@ -2034,3 +2034,115 @@ describe("AppointmentClient appointment lifecycle controls", () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 });
+
+describe("AppointmentClient detail editing", () => {
+  function editorSnapshot(
+    canEditAppointment: boolean,
+    overrides: Partial<AppointmentSnapshot["appointment"]> = {},
+  ): AppointmentSnapshot {
+    return {
+      ...BASE_SNAPSHOT,
+      appointment: { ...BASE_SNAPSHOT.appointment, ...overrides },
+      viewer: {
+        ...BASE_SNAPSHOT.viewer,
+        kind: "authenticated",
+        permissions: {
+          ...BASE_SNAPSHOT.viewer.permissions,
+          canEditAppointment,
+        },
+      },
+    };
+  }
+
+  function titleEditButton(): HTMLButtonElement | null {
+    return container.querySelector<HTMLButtonElement>("h1 button");
+  }
+
+  function titleInput(): HTMLInputElement {
+    const input = container.querySelector('input[aria-label="Appointment title"]');
+    if (!(input instanceof HTMLInputElement)) throw new Error("Title input not found");
+    return input;
+  }
+
+  function descriptionButton(): HTMLButtonElement | null {
+    return Array.from(container.querySelectorAll("button"))
+      .find((button) => button.textContent?.includes("Add a description")) ?? null;
+  }
+
+  it("makes the heading and description editable for an active manager", async () => {
+    await act(async () => root.render(
+      <AppointmentClient initialSnapshot={editorSnapshot(true)} />,
+    ));
+
+    expect(titleEditButton()).not.toBeNull();
+    expect(descriptionButton()).not.toBeNull();
+    expect(container.querySelector("h1")?.textContent).toContain("Planning");
+  });
+
+  it("leaves the heading as plain text for a guest", async () => {
+    await act(async () => root.render(
+      <AppointmentClient initialSnapshot={BASE_SNAPSHOT} />,
+    ));
+
+    expect(titleEditButton()).toBeNull();
+    expect(descriptionButton()).toBeNull();
+    expect(container.querySelector("h1")?.textContent).toBe("Planning");
+  });
+
+  it("leaves the heading as plain text once the appointment is finalized", async () => {
+    await act(async () => root.render(
+      <AppointmentClient
+        initialSnapshot={editorSnapshot(false, {
+          status: "FINALIZED",
+          finalOptionId: OPTION_ONE_ID,
+          revision: 2,
+        })}
+      />,
+    ));
+
+    expect(titleEditButton()).toBeNull();
+    expect(container.querySelector("h1")?.textContent).toBe("Planning");
+  });
+
+  it("folds a rename and its revision into the rendered snapshot", async () => {
+    await act(async () => root.render(
+      <AppointmentClient initialSnapshot={editorSnapshot(true)} />,
+    ));
+    fetchMock.mockResolvedValueOnce(jsonResponse({ revision: 4 }));
+
+    const button = titleEditButton();
+    if (button === null) throw new Error("Title edit button not found");
+    await act(async () => button.click());
+    await act(async () => {
+      const input = titleInput();
+      const setter = Object.getOwnPropertyDescriptor(
+        HTMLInputElement.prototype,
+        "value",
+      )?.set;
+      if (!setter) throw new Error("Input value setter not found");
+      setter.call(input, "Renamed planning");
+      input.dispatchEvent(new Event("input", { bubbles: true }));
+    });
+    await act(async () => {
+      titleInput().dispatchEvent(
+        new KeyboardEvent("keydown", { key: "Enter", bubbles: true }),
+      );
+    });
+
+    expect(fetchMock).toHaveBeenCalledOnce();
+    const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+    expect(url).toBe(`/api/appointments/${PUBLIC_ID}`);
+    expect(init.method).toBe("PATCH");
+    expect(init.body).toBe('{"title":"Renamed planning"}');
+    expect(titleEditButton()?.textContent).toContain("Renamed planning");
+
+    // A snapshot older than the rename must not roll it back.
+    fetchMock.mockResolvedValueOnce(jsonResponse({
+      ...editorSnapshot(true),
+      appointment: { ...editorSnapshot(true).appointment, revision: 3 },
+    }));
+    await act(async () => currentEventSource().message(JSON.stringify({ revision: 3 })));
+
+    expect(titleEditButton()?.textContent).toContain("Renamed planning");
+  });
+});

@@ -24,6 +24,8 @@ import {
   type FinalizeRequest,
 } from "../../../features/appointments/contracts";
 import styles from "./appointment.module.css";
+import { AppointmentDescriptionEditor } from "./AppointmentDescriptionEditor";
+import { AppointmentTitleEditor } from "./AppointmentTitleEditor";
 import {
   clearActiveParticipantId,
   readActiveParticipantId,
@@ -89,6 +91,27 @@ function applyResponse(
         noCount: responses.filter((response) => response.value === "NO").length,
       };
     }),
+  };
+}
+
+type AppointmentDetailPatch = Partial<
+  Pick<AppointmentSnapshot["appointment"], "title" | "description" | "optionLimit">
+>;
+
+/**
+ * The same guard as `applyResponse`: a reply that is older than what is already
+ * rendered is a race the SSE refresh will settle, so it is dropped rather than
+ * allowed to undo newer state.
+ */
+function applyAppointmentDetails(
+  snapshot: AppointmentSnapshot,
+  patch: AppointmentDetailPatch,
+  revision: number,
+): AppointmentSnapshot {
+  if (revision < snapshot.appointment.revision) return snapshot;
+  return {
+    ...snapshot,
+    appointment: { ...snapshot.appointment, ...patch, revision },
   };
 }
 
@@ -1029,6 +1052,13 @@ export function AppointmentClient({ initialSnapshot }: AppointmentClientProps) {
     && snapshot.viewer.permissions.canRespond
     ? activeParticipantId
     : null;
+  // The flag is already ACTIVE-only, so a finalized appointment reads as plain text.
+  const canEditDetails = snapshot.viewer.permissions.canEditAppointment;
+
+  function detailsSaved(patch: AppointmentDetailPatch, revision: number): void {
+    renderedRevisionRef.current = Math.max(renderedRevisionRef.current, revision);
+    setSnapshot((current) => applyAppointmentDetails(current, patch, revision));
+  }
 
   function responseSaved(
     optionId: string,
@@ -1055,6 +1085,20 @@ export function AppointmentClient({ initialSnapshot }: AppointmentClientProps) {
       participantSelectionPending={participantSelectionPending}
       onJoined={participantJoined}
       managementControls={managementControls}
+      renderTitle={canEditDetails ? () => (
+        <AppointmentTitleEditor
+          publicId={publicId}
+          title={snapshot.appointment.title}
+          onSaved={(revision, title) => detailsSaved({ title }, revision)}
+        />
+      ) : undefined}
+      renderDescription={canEditDetails ? () => (
+        <AppointmentDescriptionEditor
+          description={snapshot.appointment.description}
+          publicId={publicId}
+          onSaved={(revision, description) => detailsSaved({ description }, revision)}
+        />
+      ) : undefined}
       readOnly={!snapshot.viewer.permissions.canRespond}
       showJoinForm={!currentViewAccessRevoked && (
         joinedInThisView || (

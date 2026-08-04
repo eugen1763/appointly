@@ -14,6 +14,7 @@ import {
   type MonthCursor,
 } from "../../../features/appointments/MonthGrid";
 import routeStyles from "../../routes.module.css";
+import { routeErrorMessage } from "./appointment-patch";
 import styles from "./appointment.module.css";
 import { formatCalendarDate } from "./calendar-date";
 
@@ -27,31 +28,6 @@ export interface InlineOptionAddProps {
   readonly onAdded: () => void | Promise<void>;
   /** Test seam; the calendar is only ever rendered in the browser. */
   readonly now?: () => Date;
-}
-
-function routeErrorMessage(body: unknown): string {
-  if (
-    typeof body !== "object"
-    || body === null
-    || !("error" in body)
-    || typeof body.error !== "object"
-    || body.error === null
-  ) {
-    return GENERIC_ERROR_MESSAGE;
-  }
-  if ("fieldErrors" in body.error && typeof body.error.fieldErrors === "object") {
-    for (const messages of Object.values(body.error.fieldErrors ?? {})) {
-      if (
-        Array.isArray(messages)
-        && typeof messages[0] === "string"
-      ) {
-        return messages[0];
-      }
-    }
-  }
-  return "message" in body.error && typeof body.error.message === "string"
-    ? body.error.message
-    : GENERIC_ERROR_MESSAGE;
 }
 
 function todayIsoFrom(current: Date): string {
@@ -131,7 +107,7 @@ export function InlineOptionAdd({
       } catch {
         throw new Error(response.ok ? INVALID_SUCCESS_MESSAGE : GENERIC_ERROR_MESSAGE);
       }
-      if (!response.ok) throw new Error(routeErrorMessage(body));
+      if (!response.ok) throw new Error(routeErrorMessage(body, GENERIC_ERROR_MESSAGE));
       const parsed = addOptionSuccessSchema.safeParse(body);
       if (!parsed.success) throw new Error(INVALID_SUCCESS_MESSAGE);
 

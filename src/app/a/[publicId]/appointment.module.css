@@ -34,6 +34,138 @@
   overflow-wrap: anywhere;
 }
 
+/*
+ * Editing happens where the text already is, so the idle controls must read as
+ * the heading and the paragraph — the affordance is the hover frame and the ✎,
+ * not button chrome.
+ */
+.titleEditButton {
+  display: inline-block;
+  max-width: 100%;
+  margin-inline-start: calc(var(--space-2) * -1);
+  padding: var(--space-2);
+  color: inherit;
+  background: none;
+  border: var(--rule-width) solid transparent;
+  border-radius: var(--radius-sm);
+  letter-spacing: inherit;
+  text-align: start;
+  overflow-wrap: anywhere;
+  cursor: pointer;
+  transition: background var(--transition-fast), border-color var(--transition-fast);
+}
+
+.titleEditButton:hover {
+  border-color: var(--color-border);
+  background: var(--color-sunk);
+}
+
+.editGlyph {
+  margin-inline-start: var(--space-3);
+  color: var(--color-text-faint);
+  font-size: var(--text-base);
+  vertical-align: middle;
+}
+
+.titleEditButton:hover .editGlyph,
+.descriptionEditButton:hover .editGlyph {
+  color: var(--color-action);
+}
+
+.titleEditing input {
+  width: 100%;
+  max-width: var(--copy-measure);
+  padding: var(--space-2);
+  color: inherit;
+  background: var(--color-surface);
+  border: var(--rule-width) solid var(--color-border);
+  border-radius: var(--radius-sm);
+  letter-spacing: inherit;
+}
+
+.titleEditError,
+.descriptionEditError {
+  max-width: var(--copy-measure);
+  margin: var(--space-2) 0 0;
+  color: var(--color-no);
+  font-size: var(--text-sm);
+  font-weight: 700;
+}
+
+.descriptionEditButton {
+  display: block;
+  max-width: var(--copy-measure);
+  margin-block: var(--space-3) 0;
+  margin-inline: calc(var(--space-2) * -1) 0;
+  padding: var(--space-2);
+  color: var(--color-text-muted);
+  background: none;
+  border: var(--rule-width) solid transparent;
+  border-radius: var(--radius-sm);
+  text-align: start;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  cursor: pointer;
+  transition: background var(--transition-fast), border-color var(--transition-fast);
+}
+
+.descriptionEditButton:hover {
+  border-color: var(--color-border);
+  background: var(--color-sunk);
+}
+
+.descriptionAddButton {
+  min-height: var(--target-size);
+  color: var(--color-action);
+  font-size: var(--text-sm);
+  font-weight: 700;
+}
+
+.descriptionEditor {
+  max-width: var(--copy-measure);
+  margin-top: var(--space-3);
+}
+
+.descriptionEditor textarea {
+  display: block;
+  width: 100%;
+  min-height: 7rem;
+  padding: var(--space-2);
+  color: inherit;
+  background: var(--color-surface);
+  border: var(--rule-width) solid var(--color-border);
+  border-radius: var(--radius-sm);
+  resize: vertical;
+}
+
+.descriptionEditorActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+}
+
+.descriptionEditorActions button {
+  min-height: var(--target-size);
+  padding: var(--space-2) var(--space-4);
+  border: var(--rule-width) solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.descriptionEditorActions button[type="submit"] {
+  color: var(--color-surface);
+  border-color: var(--color-action);
+  background: var(--color-action);
+}
+
+.descriptionEditorActions button:disabled {
+  cursor: not-allowed;
+  opacity: 0.65;
+}
+
 .summary {
   display: flex;
   gap: var(--space-5);

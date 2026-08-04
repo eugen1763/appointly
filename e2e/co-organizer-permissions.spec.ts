@@ -1,4 +1,4 @@
-import type { Page } from "@playwright/test";
+import type { Page, Response } from "@playwright/test";
 
 import {
   appointmentRouteContracts,
@@ -8,7 +8,7 @@ import {
   createAppointmentThroughWizard,
   readAppointmentSnapshot,
 } from "./appointment-helpers";
-import { CO_ORGANIZER_IDENTITY } from "./auth-identities";
+import { CO_ORGANIZER_IDENTITY, E2E_BASE_URL } from "./auth-identities";
 import { expect, test } from "./fixtures";
 
 const INITIAL_TITLE = "Task 46 co-organizer permissions";
@@ -25,6 +25,18 @@ interface BrowserJsonRequest {
 interface BrowserJsonResult {
   readonly status: number;
   readonly body: unknown;
+}
+
+function waitForExactRouteResponse(
+  page: Page,
+  method: "GET" | "POST" | "PATCH" | "DELETE",
+  path: string,
+): Promise<Response> {
+  const expectedUrl = new URL(path, E2E_BASE_URL).href;
+  return page.waitForResponse((response) => (
+    response.url() === expectedUrl
+    && response.request().method() === method
+  ));
 }
 
 async function sameOriginJsonFetch(
@@ -122,14 +134,22 @@ test("co-organizer binds dashboard access and respects owner-only permissions", 
   });
 
   const appointmentPath = `/api/appointments/${created.publicId}`;
-  const updateResult = await sameOriginJsonFetch(coOrganizerPage, {
-    path: appointmentPath,
-    method: "PATCH",
-    body: { title: UPDATED_TITLE },
-  });
-  expect(updateResult.status).toBe(200);
+  // A co-organizer renames through the heading itself, not through the API.
+  const updateResponsePromise = waitForExactRouteResponse(
+    coOrganizerPage,
+    "PATCH",
+    appointmentPath,
+  );
+  await coOrganizerPage.getByRole("button", {
+    name: INITIAL_TITLE,
+    exact: true,
+  }).click();
+  await coOrganizerPage.getByLabel("Appointment title").fill(UPDATED_TITLE);
+  await coOrganizerPage.getByLabel("Appointment title").press("Enter");
+  const updateResponse = await updateResponsePromise;
+  expect(updateResponse.status()).toBe(200);
   const { revision: postEditRevision } = revisionSuccessSchema.parse(
-    updateResult.body,
+    await updateResponse.json(),
   );
   expect(typeof postEditRevision).toBe("number");
 

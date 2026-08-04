@@ -100,6 +100,10 @@ export interface PublicAppointmentViewProps {
   readonly participantSelectionPending?: boolean;
   readonly onJoined?: (participantId: string) => void;
   readonly managementControls?: ReactNode;
+  /** Replaces the whole `<h1>`; the replacement must keep the title as its name. */
+  readonly renderTitle?: () => ReactNode;
+  /** Replaces the description paragraph, including its absent state. */
+  readonly renderDescription?: () => ReactNode;
   readonly readOnly?: boolean;
   readonly showJoinForm?: boolean;
   readonly renderResponseControl?: (option: PublicOption) => ReactNode;
@@ -117,6 +121,8 @@ export function PublicAppointmentView({
   participantSelectionPending = false,
   onJoined,
   managementControls = null,
+  renderTitle,
+  renderDescription,
   readOnly = true,
   showJoinForm = true,
   renderResponseControl,
@@ -155,10 +161,12 @@ export function PublicAppointmentView({
         <header className={styles.appointmentHeader}>
           <div>
             <p className={routeStyles.kicker}>{TYPE_LABELS[appointment.appointment.type]}</p>
-            <h1>{appointment.appointment.title}</h1>
-            {appointment.appointment.description ? (
-              <p className={styles.description}>{appointment.appointment.description}</p>
-            ) : null}
+            {renderTitle ? renderTitle() : <h1>{appointment.appointment.title}</h1>}
+            {renderDescription ? renderDescription() : (
+              appointment.appointment.description ? (
+                <p className={styles.description}>{appointment.appointment.description}</p>
+              ) : null
+            )}
           </div>
           <dl className={styles.summary}>
             <div><dt>Status</dt><dd>{finalized ? "Finalized" : "Active"}</dd></div>
