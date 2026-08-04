@@ -1587,6 +1587,15 @@ describe("AppointmentClient appointment lifecycle controls", () => {
     return button;
   }
 
+  async function openManagePanel(): Promise<void> {
+    const toggle = container.querySelector("button[aria-controls='manage-panel']");
+    if (!(toggle instanceof HTMLButtonElement)) {
+      throw new Error("Manage appointment toggle not found");
+    }
+    if (toggle.getAttribute("aria-expanded") === "true") return;
+    await act(async () => toggle.click());
+  }
+
   function appointmentDeleteButton(): HTMLButtonElement {
     const button = container.querySelector("[data-delete-appointment]");
     if (!(button instanceof HTMLButtonElement)) {
@@ -1636,6 +1645,7 @@ describe("AppointmentClient appointment lifecycle controls", () => {
       />,
     ));
 
+    await openManagePanel();
     expect(appointmentDeleteButton().textContent).toBe("Delete appointment");
     expect(container.querySelector("[data-reopen-appointment]")).toBeNull();
   });
@@ -1666,6 +1676,7 @@ describe("AppointmentClient appointment lifecycle controls", () => {
     ));
 
     expect(reopenButton()).toBeInstanceOf(HTMLButtonElement);
+    await openManagePanel();
     expect(appointmentDeleteButton()).toBeInstanceOf(HTMLButtonElement);
   });
 
@@ -1778,6 +1789,7 @@ describe("AppointmentClient appointment lifecycle controls", () => {
       />,
     ));
 
+    await openManagePanel();
     await act(async () => appointmentDeleteButton().click());
     const dialog = appointmentDeleteDialog();
     const input = confirmationTitleInput();
@@ -1824,6 +1836,7 @@ describe("AppointmentClient appointment lifecycle controls", () => {
     await act(async () => root.render(
       <AppointmentClient initialSnapshot={snapshot} />,
     ));
+    await openManagePanel();
     await act(async () => appointmentDeleteButton().click());
     const confirm = appointmentDeleteDialog().querySelector(
       "[data-confirm-delete-appointment]",
@@ -1859,6 +1872,7 @@ describe("AppointmentClient appointment lifecycle controls", () => {
     await act(async () => root.render(
       <AppointmentClient initialSnapshot={snapshot} />,
     ));
+    await openManagePanel();
     await act(async () => appointmentDeleteButton().click());
     await enterConfirmationTitle("Planning");
 
@@ -1928,6 +1942,7 @@ describe("AppointmentClient appointment lifecycle controls", () => {
       setter.call(selector, SECOND_PARTICIPANT_ID);
       selector.dispatchEvent(new Event("change", { bubbles: true }));
     });
+    await openManagePanel();
     await act(async () => appointmentDeleteButton().click());
     await enterConfirmationTitle("Planning");
     await act(async () => {
@@ -1959,6 +1974,7 @@ describe("AppointmentClient appointment lifecycle controls", () => {
         initialSnapshot={managerSnapshot({ canDeleteAppointment: true })}
       />,
     ));
+    await openManagePanel();
     await act(async () => appointmentDeleteButton().click());
     await enterConfirmationTitle("Planning");
     const dialog = appointmentDeleteDialog();
@@ -2003,6 +2019,7 @@ describe("AppointmentClient appointment lifecycle controls", () => {
         initialSnapshot={managerSnapshot({ canDeleteAppointment: true })}
       />,
     ));
+    await openManagePanel();
     const firstTrigger = appointmentDeleteButton();
     firstTrigger.focus();
     await act(async () => firstTrigger.click());

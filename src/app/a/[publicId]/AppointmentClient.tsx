@@ -32,6 +32,7 @@ import {
   storeActiveParticipantId,
 } from "./guest-selection-storage";
 import { InlineOptionAdd } from "./InlineOptionAdd";
+import { ManageAppointmentPanel } from "./ManageAppointmentPanel";
 import {
   OptionLabel,
   PublicAppointmentView,
@@ -1039,13 +1040,26 @@ export function AppointmentClient({ initialSnapshot }: AppointmentClientProps) {
       />
     )
     : null;
-  const managementControls = reopenControls === null
-    && appointmentDeletionControls === null
+  // Only a signed-in manager can administer anything; a guest never sees the toggle.
+  const managePanel = snapshot.viewer.kind === "authenticated"
+    ? (
+      <ManageAppointmentPanel
+        deleteControls={appointmentDeletionControls}
+        optionCount={snapshot.options.length}
+        optionLimit={snapshot.appointment.optionLimit}
+        participants={snapshot.participants}
+        permissions={snapshot.viewer.permissions}
+        publicId={publicId}
+        onDetailsSaved={(revision, patch) => detailsSaved(patch, revision)}
+      />
+    )
+    : null;
+  const managementControls = reopenControls === null && managePanel === null
     ? null
     : (
       <>
         {reopenControls}
-        {appointmentDeletionControls}
+        {managePanel}
       </>
     );
   const respondingParticipantId = !participantSelectionPending

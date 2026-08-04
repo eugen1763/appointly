@@ -1024,6 +1024,135 @@
   font-weight: 700;
 }
 
+/*
+ * Administration lives one deliberate click away from the board: the toggle is
+ * quiet, and the panel below it is unmounted while closed.
+ */
+.managePanel {
+  margin-top: var(--space-6);
+}
+
+.manageToggle {
+  min-height: var(--target-size);
+  padding: var(--space-2) var(--space-4);
+  color: var(--color-text-muted);
+  border: var(--rule-width) solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.manageToggle:hover {
+  color: var(--color-action);
+  border-color: var(--color-action);
+}
+
+.managePanelBody {
+  display: grid;
+  gap: var(--space-5);
+  margin-top: var(--space-4);
+  padding: var(--space-5);
+  border: var(--rule-width) solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+}
+
+.manageSection {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.manageSection + .manageSection {
+  padding-top: var(--space-5);
+  border-top: var(--rule-width) solid var(--color-border-subtle);
+}
+
+.manageSection h2 {
+  margin: 0;
+  font-size: var(--text-lg);
+}
+
+.manageHint {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+}
+
+.manageForm {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  align-items: end;
+}
+
+.manageField {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.manageField label {
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+  font-weight: 700;
+}
+
+.manageField input {
+  /*
+   * Native number and email controls compress their own content instead of
+   * overflowing, so this width is set to hold the longest real value rather
+   * than trusting an overflow probe to catch a clipped one.
+   */
+  width: 100%;
+  min-width: 0;
+  max-width: 22rem;
+  min-height: var(--target-size);
+  padding: var(--space-2);
+  color: inherit;
+  background: var(--color-background);
+  border: var(--rule-width) solid var(--color-border);
+  border-radius: var(--radius-sm);
+}
+
+.manageField input[type="number"] {
+  max-width: 7rem;
+  font-family: var(--font-data);
+}
+
+.manageForm button[type="submit"] {
+  min-height: var(--target-size);
+  padding: var(--space-2) var(--space-4);
+  color: var(--color-surface);
+  border: var(--rule-width) solid var(--color-action);
+  border-radius: var(--radius-sm);
+  background: var(--color-action);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.manageForm button:disabled {
+  cursor: not-allowed;
+  opacity: 0.65;
+}
+
+.manageError {
+  margin: 0;
+  color: var(--color-no);
+  font-size: var(--text-sm);
+  font-weight: 700;
+}
+
+/* Inside the panel it is a section, not a card — but it keeps its red rule. */
+.managePanelBody .deletePanel {
+  margin-top: 0;
+  padding: var(--space-5) 0 0 var(--space-4);
+  border: 0;
+  border-top: var(--rule-width) solid var(--color-border-subtle);
+  border-left: var(--space-1) solid var(--color-no);
+  border-radius: 0;
+  background: none;
+}
+
 .deletePanel {
   display: grid;
   gap: var(--space-5);
