@@ -215,7 +215,16 @@ export function PublicAppointmentView({
             <p>Yes, No, and Unanswered are shown for each participant.</p>
           )}
           {options.length === 0 ? (
-            <p className={styles.emptyState}>No appointment options are available.</p>
+            <div className={styles.boardWrap}>
+              <p className={styles.emptyState}>
+                {!finalized && suggestionControls
+                  ? "No options yet. Add the first one below."
+                  : "No options have been proposed yet."}
+              </p>
+              {!finalized && suggestionControls ? (
+                <div className={styles.boardFooter}>{suggestionControls}</div>
+              ) : null}
+            </div>
           ) : (
             <div className={styles.boardWrap}>
               <div className={styles.boardScroll} data-board-scroll>

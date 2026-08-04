@@ -361,12 +361,13 @@
   font-weight: 400;
 }
 
+/* Sits inside .boardWrap, which already draws the border, radius and surface;
+   repeating them here doubled the rule and poked square corners through the
+   wrap's radius. */
 .emptyState {
   margin: 0;
   padding: var(--space-5);
   color: var(--color-text-muted);
-  border: var(--rule-width) solid var(--color-border);
-  background: var(--color-surface);
 }
 
 .refreshError {

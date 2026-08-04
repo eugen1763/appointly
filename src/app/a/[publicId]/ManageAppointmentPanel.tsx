@@ -377,7 +377,7 @@ export function ManageAppointmentPanel({
                 {coOrganizerCount} of {COORGANIZER_MAX_COUNT} co-organizers
               </p>
               {managersLoading ? (
-                <p className={styles.manageHint}>Loading co-organizers…</p>
+                <p className={styles.manageHint} role="status">Loading co-organizers…</p>
               ) : null}
               {managersError ? (
                 <p className={styles.manageError} role="alert">

@@ -188,6 +188,54 @@ describe("PublicAppointmentView", () => {
   });
 });
 
+describe("a board with no options", () => {
+  const activeEmpty: PublicAppointment = {
+    ...appointment,
+    appointment: { ...appointment.appointment, status: "ACTIVE", finalOptionId: null },
+    options: [],
+  };
+  const finalizedEmpty: PublicAppointment = {
+    ...appointment,
+    appointment: { ...appointment.appointment, finalOptionId: null },
+    options: [],
+  };
+
+  const addControl = <form aria-label="Suggest an option" />;
+
+  function suggestionForm(): Element | null {
+    return container.querySelector('form[aria-label="Suggest an option"]');
+  }
+
+  /* Deleting every option used to strand the organizer: the add control lived
+     inside the populated branch, so an emptied board could never be refilled. */
+  it("invites the first option and still offers the add control", () => {
+    act(() => root.render(
+      <PublicAppointmentView appointment={activeEmpty} suggestionControls={addControl} />,
+    ));
+
+    expect(container.textContent).toContain("No options yet. Add the first one below.");
+    expect(suggestionForm()).not.toBeNull();
+  });
+
+  it("states the read-only case when the viewer cannot suggest", () => {
+    act(() => root.render(<PublicAppointmentView appointment={activeEmpty} />));
+
+    expect(container.textContent).toContain("No options have been proposed yet.");
+    expect(container.textContent).not.toContain("Add the first one below.");
+    expect(suggestionForm()).toBeNull();
+  });
+
+  it("states the read-only case on a finalized appointment and hides the add control", () => {
+    act(() => root.render(
+      <PublicAppointmentView appointment={finalizedEmpty} suggestionControls={addControl} />,
+    ));
+
+    expect(container.textContent).toContain("No options have been proposed yet.");
+    expect(container.textContent).not.toContain("Add the first one below.");
+    expect(suggestionForm()).toBeNull();
+  });
+});
+
 describe("leading options", () => {
   function counts(...yesCounts: readonly number[]) {
     return yesCounts.map((yesCount, index) => ({ id: `option-${index}`, yesCount }));
