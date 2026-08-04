@@ -1,6 +1,8 @@
 // @vitest-environment jsdom
 
 import { act } from "react";
+import { hydrateRoot } from "react-dom/client";
+import { renderToString } from "react-dom/server";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { AppointmentComposer } from "./AppointmentComposer";
@@ -848,5 +850,60 @@ describe("AppointmentComposer error mapping", () => {
     await commit(user);
 
     expect(screen.getByLabelText("Public appointment link")).not.toBeNull();
+  });
+});
+
+describe("AppointmentComposer before hydration", () => {
+  /**
+   * The real sequence, not a simulation of it: server-render the composer, type
+   * into the field while React is still loading, then hydrate. The title input is
+   * autoFocused, so this is what a person on a slow connection actually does. A
+   * change event never reaches React, so without adoption the title stays out of
+   * state and creation fails with "Add a title." — with the title on screen.
+   */
+  async function hydrateWithTypedTitle(
+    typed: string,
+  ): Promise<{ submit: ReturnType<typeof vi.fn<CreateAppointmentSubmit>> }> {
+    const submit = vi.fn<CreateAppointmentSubmit>().mockResolvedValue(success);
+    const element = (
+      <AppointmentComposer
+        defaultOwnerDisplayName="Ada Lovelace"
+        submit={submit}
+        copyText={vi.fn<(text: string) => Promise<void>>().mockResolvedValue(undefined)}
+        now={now}
+      />
+    );
+
+    const container = document.createElement("div");
+    container.innerHTML = renderToString(element);
+    document.body.append(container);
+
+    const input = container.querySelector<HTMLInputElement>("#composer-title");
+    if (!input) throw new Error("Server render carried no title field");
+    input.value = typed;
+
+    await act(async () => {
+      hydrateRoot(container, element);
+    });
+    return { submit };
+  }
+
+  it("keeps a title typed before React attached", async () => {
+    const { submit } = await hydrateWithTypedTitle("Typed before hydration");
+
+    expect(document.querySelector<HTMLInputElement>("#composer-title")?.value)
+      .toBe("Typed before hydration");
+
+    fireEvent.click(dayButton(DAY_ONE));
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: "Create and copy link" }));
+    });
+    await settle();
+
+    expect(submit).toHaveBeenCalledTimes(1);
+    expect(submit.mock.calls[0]?.[0]).toMatchObject({
+      title: "Typed before hydration",
+    });
+    expect(screen.queryByRole("alert", { name: undefined })).toBeNull();
   });
 });

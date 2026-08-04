@@ -154,6 +154,28 @@ export function AppointmentComposer({
   const [copyState, setCopyState] = useState<CopyState>("IDLE");
   const submitLock = useRef(false);
   const lastSubmission = useRef<LastSubmission | null>(null);
+  const titleRef = useRef<HTMLInputElement>(null);
+  const startTimeRef = useRef<HTMLInputElement>(null);
+  const endTimeRef = useRef<HTMLInputElement>(null);
+
+  /*
+   * Adopt anything typed before hydration. These three fields are server-rendered
+   * and the title is autoFocused, so on a slow connection a person starts typing
+   * into a field React has not attached to yet — no change event is ever raised and
+   * the value stays out of state. Creation would then fail with "Add a title."
+   * while the title sits visibly in the box. Everything else in this form is behind
+   * the More-settings disclosure, which cannot open until React is running.
+   */
+  useEffect(() => {
+    const adopted: [HTMLInputElement | null, (value: string) => void][] = [
+      [titleRef.current, setTitle],
+      [startTimeRef.current, setStartTime],
+      [endTimeRef.current, setEndTime],
+    ];
+    for (const [element, setValue] of adopted) {
+      if (element && element.value !== "") setValue(element.value);
+    }
+  }, []);
 
   const sortedDays = [...pickedDays].sort();
   const isRun = isConsecutiveRun(sortedDays);
@@ -556,6 +578,7 @@ export function AppointmentComposer({
         <input
           className={styles.composerTitleInput}
           id="composer-title"
+          ref={titleRef}
           autoFocus
           value={title}
           onChange={(event) => {
@@ -587,6 +610,7 @@ export function AppointmentComposer({
                 <label htmlFor="composer-start-time">Start time</label>
                 <input
                   id="composer-start-time"
+                  ref={startTimeRef}
                   type="time"
                   value={startTime}
                   onChange={(event) => updateStartTime(event.target.value)}
@@ -597,6 +621,7 @@ export function AppointmentComposer({
                 <label htmlFor="composer-end-time">End time</label>
                 <input
                   id="composer-end-time"
+                  ref={endTimeRef}
                   type="time"
                   value={endTime}
                   onChange={(event) => {

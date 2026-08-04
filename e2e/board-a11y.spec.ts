@@ -67,6 +67,12 @@ function roleTally(nodes: readonly AxNode[]): Record<string, number> {
  * one that runs under all three engines, and the composer is a different surface
  * with its own (Chromium-only) coverage; driving it here would make an engine gate
  * for the board fail for reasons that have nothing to do with the board.
+ *
+ * That was once load-bearing rather than tidy: the composer's controlled title
+ * input dropped anything typed before hydration, so driving it here failed under
+ * WebKit. That bug is fixed and the composer now passes under all three engines,
+ * so this seeding is belt-and-braces — keep it anyway, because the separation of
+ * concerns above is the reason that outlives the bug.
  */
 async function createBoardAppointment(
   ownerPage: Page,
