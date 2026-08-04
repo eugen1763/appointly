@@ -33,8 +33,13 @@ export type ManagerDeleteHandler = (
   routeContext: ManagerDeleteRouteContext,
 ) => Promise<Response>;
 
-function assertNoRequestBody(request: Request): void {
-  if (request.body !== null) {
+/**
+ * Rejects a body by its content, not by the presence of a stream: Next attaches
+ * a stream to every incoming request, so a `request.body !== null` test rejects
+ * every real caller. Matches the reopen and reset-link routes.
+ */
+async function assertNoRequestBody(request: Request): Promise<void> {
+  if ((await request.text()).length > 0) {
     throw new AppError("VALIDATION_FAILED", "This request does not accept a body.", {
       fieldErrors: { body: ["Request body must be empty."] },
     });
@@ -51,7 +56,7 @@ export function createManagerDeleteHandler(
         managerParamsSchema,
         await routeContext.params,
       );
-      assertNoRequestBody(request);
+      await assertNoRequestBody(request);
       const identity = extractManagerIdentity(
         await dependencies.readSession(request),
       );

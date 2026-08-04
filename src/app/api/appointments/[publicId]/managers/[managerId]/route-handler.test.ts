@@ -44,6 +44,13 @@ beforeEach(() => {
 
 afterEach(() => database.close());
 
+/*
+ * A synthetic Request with `body: undefined` gets `body: null` from undici, but a
+ * real one arrives with a stream attached whatever the method. That gap hid a guard
+ * here that rejected every browser DELETE until `editing-surfaces.spec.ts` drove the
+ * removal through a real browser. This harness cannot see that class of bug, so the
+ * end-to-end coverage is the guarantee — do not replace it with a request built here.
+ */
 function del(
   params: Record<string, string> = { publicId: PUBLIC_ID, managerId },
   origin = APP_ORIGIN,
