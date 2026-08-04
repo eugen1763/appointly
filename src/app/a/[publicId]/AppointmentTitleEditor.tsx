@@ -34,7 +34,11 @@ export function AppointmentTitleEditor({
   const [error, setError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const requestLock = useRef(false);
-  // Escape unmounts the input; the blur that follows must not commit it.
+  /*
+   * Escape unmounts the input; in Chromium a focusout follows and must not commit.
+   * Firefox and WebKit fire nothing on removal, so the flag would still be set when
+   * the next edit opens and would swallow that rename — beginEdit clears it.
+   */
   const cancelledRef = useRef(false);
 
   useEffect(() => {
@@ -45,6 +49,7 @@ export function AppointmentTitleEditor({
   }, [editing]);
 
   function beginEdit(): void {
+    cancelledRef.current = false;
     setError(null);
     setEditing(true);
   }

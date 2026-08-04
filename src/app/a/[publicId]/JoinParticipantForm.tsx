@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useRef, useState, type FormEvent } from "react";
 
 import { joinParticipantSuccessSchema } from "../../../features/appointments/contracts";
 import styles from "./appointment.module.css";
@@ -28,7 +28,14 @@ export interface JoinParticipantFormProps {
 }
 
 export function JoinParticipantForm({ publicId, onJoined }: JoinParticipantFormProps) {
-  const [displayName, setDisplayName] = useState("");
+  /*
+   * Uncontrolled on purpose. This form is server-rendered, so a guest can focus it
+   * and type before React hydrates — on a slow connection that window is real. A
+   * controlled input would keep its state at "" for that typing, because no change
+   * event ever reached React, and the join would post an empty name and lose it.
+   * Reading the field at submit time sends whatever the person actually typed.
+   */
+  const displayNameRef = useRef<HTMLInputElement>(null);
   const [joinState, setJoinState] = useState<JoinState>({ kind: "form" });
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -39,6 +46,7 @@ export function JoinParticipantForm({ publicId, onJoined }: JoinParticipantFormP
     setSubmitting(true);
     setError(null);
     try {
+      const displayName = displayNameRef.current?.value ?? "";
       const response = await fetch(`/api/appointments/${publicId}/participants`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -133,13 +141,12 @@ export function JoinParticipantForm({ publicId, onJoined }: JoinParticipantFormP
           id="participant-display-name"
           name="displayName"
           type="text"
-          value={displayName}
+          ref={displayNameRef}
           maxLength={80}
           autoComplete="name"
           required
           aria-invalid={error === null ? undefined : true}
           aria-describedby={error === null ? undefined : "join-error"}
-          onChange={(event) => setDisplayName(event.currentTarget.value)}
         />
         <button type="submit" disabled={submitting}>
           {submitting ? "Joining…" : "Join appointment"}

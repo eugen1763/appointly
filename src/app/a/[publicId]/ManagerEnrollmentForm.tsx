@@ -32,7 +32,10 @@ export function ManagerEnrollmentForm({
   enrollmentError,
   onEnrolled,
 }: ManagerEnrollmentFormProps) {
-  const [displayName, setDisplayName] = useState("");
+  /* Uncontrolled for the same reason as JoinParticipantForm: this panel is
+     server-rendered, so typing can precede hydration and a controlled input would
+     post an empty name. The field at submit time is the source of truth. */
+  const displayNameRef = useRef<HTMLInputElement>(null);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const requestLock = useRef(false);
@@ -57,6 +60,7 @@ export function ManagerEnrollmentForm({
     setPending(true);
     setError(null);
     try {
+      const displayName = displayNameRef.current?.value ?? "";
       const response = await fetch(
         `/api/appointments/${publicId}/manager-participant`,
         {
@@ -120,10 +124,9 @@ export function ManagerEnrollmentForm({
           id="manager-participant-display-name"
           maxLength={DISPLAY_NAME_MAX_LENGTH}
           name="displayName"
+          ref={displayNameRef}
           required
           type="text"
-          value={displayName}
-          onChange={(event) => setDisplayName(event.currentTarget.value)}
         />
         <button disabled={pending} type="submit">
           {pending ? "Joining…" : "Join as participant"}

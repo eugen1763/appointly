@@ -157,3 +157,26 @@ describe("ManagerEnrollmentForm", () => {
     expect(onEnrolled).toHaveBeenCalledExactlyOnceWith(PARTICIPANT_ID);
   });
 });
+
+describe("ManagerEnrollmentForm before hydration", () => {
+  /** Same server-rendered hazard as the guest join form: typing can precede React. */
+  it("posts the name the field is actually carrying", async () => {
+    fetchMock.mockResolvedValue(jsonResponse({
+      participantId: PARTICIPANT_ID,
+      revision: 3,
+    }, 201));
+    await renderForm();
+
+    const input = nameInput();
+    const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")?.set;
+    if (!setter) throw new Error("Input value setter not found");
+    setter.call(input, "Pre Hydration Manager");
+    await act(async () => {
+      form()?.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
+    });
+
+    const [, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+    expect(init.body).toBe('{"displayName":"Pre Hydration Manager"}');
+    expect(onEnrolled).toHaveBeenCalledExactlyOnceWith(PARTICIPANT_ID);
+  });
+});

@@ -264,3 +264,43 @@ describe("AppointmentTitleEditor", () => {
     expect(onSaved).toHaveBeenCalledExactlyOnceWith(9, "Locked");
   });
 });
+
+describe("AppointmentTitleEditor after a cancelled edit", () => {
+  /*
+   * Escape unmounts the input. Chromium then fires focusout; Firefox, WebKit and
+   * jsdom fire nothing. The cancel flag must not survive into the next edit, or the
+   * first commit of that session is dropped with no request and no error.
+   */
+  it("still commits the next rename after Escape", async () => {
+    fetchMock.mockResolvedValue(jsonResponse({ revision: 12 }));
+    await renderEditor();
+
+    await beginEdit();
+    await type("Abandoned");
+    await pressEscape();
+    expect(fetchMock).not.toHaveBeenCalled();
+
+    await beginEdit();
+    await type("Renamed after escape");
+    await pressEnter();
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    const [, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+    expect(init.body).toBe('{"title":"Renamed after escape"}');
+    expect(onSaved).toHaveBeenCalledExactlyOnceWith(12, "Renamed after escape");
+  });
+
+  it("still commits on blur after Escape", async () => {
+    fetchMock.mockResolvedValue(jsonResponse({ revision: 13 }));
+    await renderEditor();
+
+    await beginEdit();
+    await pressEscape();
+    await beginEdit();
+    await type("Renamed by blur after escape");
+    await blurInput();
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(onSaved).toHaveBeenCalledExactlyOnceWith(13, "Renamed by blur after escape");
+  });
+});

@@ -171,3 +171,39 @@ describe("JoinParticipantForm", () => {
     expect(field().getAttribute("aria-invalid")).toBe("true");
   });
 });
+
+describe("JoinParticipantForm before hydration", () => {
+  /**
+   * Reproduces a guest typing into the server-rendered field before React takes
+   * over: the DOM carries the name but no change event ever reached React. A
+   * controlled input would post "" here and silently lose the guest's name.
+   */
+  async function submitWithoutNotifyingReact(name: string): Promise<void> {
+    const input = field();
+    const form = container.querySelector("form");
+    if (!(form instanceof HTMLFormElement)) throw new Error("Join form not found");
+    const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")?.set;
+    if (!setter) throw new Error("Input value setter not found");
+    setter.call(input, name);
+    await act(async () => {
+      form.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
+    });
+  }
+
+  it("posts the name the field is actually carrying", async () => {
+    fetchMock.mockResolvedValue(new Response(JSON.stringify({
+      participantId: PARTICIPANT_ID,
+      editUrl: EDIT_URL,
+      revision: 2,
+    }), { status: 201, headers: { "content-type": "application/json" } }));
+    renderForm();
+
+    await submitWithoutNotifyingReact("Pre Hydration Guest");
+
+    expect(fetchMock).toHaveBeenCalledWith(`/api/appointments/${PUBLIC_ID}/participants`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ displayName: "Pre Hydration Guest" }),
+    });
+  });
+});
