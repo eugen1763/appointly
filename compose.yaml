@@ -1,0 +1,38 @@
+services:
+  # SQLite WAL cannot support a second app replica or a network filesystem.
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      NODE_ENV: production
+      HOSTNAME: 0.0.0.0
+      PORT: "3000"
+      DATABASE_PATH: /app/data/appointly.sqlite
+      APP_URL: ${APP_URL:?APP_URL is required}
+      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:?BETTER_AUTH_SECRET is required}
+      GUEST_TOKEN_SECRET: ${GUEST_TOKEN_SECRET:?GUEST_TOKEN_SECRET is required}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:?GOOGLE_CLIENT_ID is required}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:?GOOGLE_CLIENT_SECRET is required}
+      TRUST_PROXY: ${TRUST_PROXY:-false}
+    ports:
+      - "3000:3000"
+    volumes:
+      - appointly-data:/app/data
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - >-
+          fetch('http://127.0.0.1:3000/api/health').then(async (response) => {
+          if (response.status !== 200 || (await response.text()) !== '{"status":"ok"}')
+          process.exit(1); }).catch(() => process.exit(1));
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+volumes:
+  appointly-data:
+    driver: local

@@ -1,0 +1,25 @@
+node_modules/
+.next/
+out/
+coverage/
+*.tsbuildinfo
+.tmp/
+
+# Secrets — .env holds the auth, guest-token and Google OAuth secrets.
+# .env.example is committed and carries no values.
+.env
+.env.local
+.env.*.local
+
+# Local SQLite database and its WAL/shm sidecars
+data/
+*.sqlite
+*.sqlite-journal
+*.sqlite-wal
+*.sqlite-shm
+
+# Playwright output
+test-results/
+playwright-report/
+blob-report/
+playwright/.cache/

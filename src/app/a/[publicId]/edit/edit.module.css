@@ -1,0 +1,32 @@
+.main {
+  display: grid;
+  align-items: start;
+}
+
+.panel {
+  width: min(100%, 34rem);
+  margin-inline: auto;
+  padding: var(--space-6);
+  background: var(--color-surface);
+  border: var(--rule-width) solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+.message {
+  margin: var(--space-4) 0 0;
+  color: var(--color-text-muted);
+}
+
+.returnLink {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--target-size);
+  margin-top: var(--space-5);
+  color: var(--color-action);
+  font-weight: 700;
+  text-underline-offset: var(--space-1);
+}
+
+.returnLink:hover {
+  text-decoration-thickness: 0.125rem;
+}

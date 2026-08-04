@@ -1,0 +1,108 @@
+:root {
+  color-scheme: light dark;
+
+  --color-background: #fbfbfd;
+  --color-surface: #ffffff;
+  --color-sunk: #f3f4f9;            /* new */
+  --color-text: #141a2e;
+  --color-text-muted: #4b5573;
+  --color-text-faint: #7b849e;      /* new */
+  --color-border: #cfd3e2;          /* core --rule-strong, so inputs keep visible borders */
+  --color-border-subtle: #e7e9f0;   /* new — core --rule */
+  --color-action: #3d2bd5;
+  --color-action-soft: #ece9ff;     /* new */
+  --color-focus: #3d2bd5;
+  --color-yes: #0f7b5f;
+  --color-yes-soft: #e2f3ed;        /* new */
+  --color-no: #c0392b;
+  --color-no-soft: #fbe9e7;         /* new */
+  --color-warning: #7a5c00;         /* amber INK, not raw --signal: used as text */
+  --color-signal: #e8b10a;          /* new */
+  --color-signal-soft: #fdf3d6;     /* new */
+
+  --font-ui: var(--font-archivo), ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-data: var(--font-plex-mono), ui-monospace, "SF Mono", "Cascadia Mono", Menlo, Consolas, monospace;
+
+  --text-xs: 0.6875rem;
+  --text-sm: 0.8125rem;
+  --text-base: 0.9375rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.5rem;
+  --text-2xl: 2rem;                 /* new */
+  --text-display: clamp(2rem, 6vw, 2.75rem);
+
+  --space-1: 0.25rem;  --space-2: 0.5rem;  --space-3: 0.75rem;  --space-4: 1rem;
+  --space-5: 1.5rem;   --space-6: 2rem;    --space-8: 3rem;     --space-10: 4rem;
+
+  --radius-sm: 5px;
+  --radius-md: 9px;
+  --radius-lg: 14px;                /* new */
+
+  --target-size: 2.75rem;           /* deliberately kept larger than core's 2.5rem */
+  --content-width: 74rem;
+  --signature-width: 18rem;  --form-width: 34rem;  --copy-measure: 42rem;
+  --headline-measure: 14ch;  --rule-width: 0.0625rem;
+  --focus-width: 0.1875rem;  --focus-offset: 0.1875rem;   /* unchanged: e2e requires an opaque outline */
+  --transition-fast: 130ms cubic-bezier(0.2, 0, 0, 1);
+  --ledger-max-height: 42rem;  --layer-sticky: 1;  --layer-sticky-corner: 2;
+  --shadow-1: 0 1px 2px rgb(20 26 46 / 6%), 0 4px 12px rgb(20 26 46 / 5%);   /* new */
+  --shadow-2: 0 8px 24px rgb(20 26 46 / 10%), 0 2px 6px rgb(20 26 46 / 6%);  /* new */
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-background: #0c0f1a;   --color-surface: #141928;   --color-sunk: #1b2133;
+    --color-text: #eef0f8;         --color-text-muted: #a3abc6; --color-text-faint: #79809b;
+    --color-border: #384260;       --color-border-subtle: #262d42;
+    --color-action: #a99bff;       --color-action-soft: #251f52;
+    --color-focus: #a99bff;
+    --color-yes: #4fc79f;          --color-yes-soft: #123028;
+    --color-no: #ff8a7a;           --color-no-soft: #35191a;
+    --color-warning: #f5c944;      --color-signal: #f5c944;    --color-signal-soft: #332a10;
+    --shadow-1: 0 1px 2px rgb(0 0 0 / 40%), 0 4px 12px rgb(0 0 0 / 30%);
+    --shadow-2: 0 8px 24px rgb(0 0 0 / 45%), 0 2px 6px rgb(0 0 0 / 35%);
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  background: var(--color-background);
+}
+
+body {
+  margin: 0;
+  color: var(--color-text);
+  background: var(--color-background);
+  font-family: var(--font-ui);
+  font-size: var(--text-base);
+  line-height: 1.45;
+  -webkit-font-smoothing: antialiased;
+}
+
+a {
+  color: inherit;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+:focus-visible {
+  outline: var(--focus-width) solid var(--color-focus);
+  outline-offset: var(--focus-offset);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition: none !important;
+  }
+}

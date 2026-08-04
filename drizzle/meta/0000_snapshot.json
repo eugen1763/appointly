@@ -1,0 +1,1276 @@
+{
+  "version": "6",
+  "dialect": "sqlite",
+  "id": "e21be97d-b90e-4bdc-96f9-d3eadc14790f",
+  "prevId": "00000000-0000-0000-0000-000000000000",
+  "tables": {
+    "account": {
+      "name": "account",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "account_id": {
+          "name": "account_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "provider_id": {
+          "name": "provider_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "access_token": {
+          "name": "access_token",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "refresh_token": {
+          "name": "refresh_token",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "id_token": {
+          "name": "id_token",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "access_token_expires_at": {
+          "name": "access_token_expires_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "refresh_token_expires_at": {
+          "name": "refresh_token_expires_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "scope": {
+          "name": "scope",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "password": {
+          "name": "password",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "(cast(unixepoch('subsecond') * 1000 as integer))"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {
+        "account_userId_idx": {
+          "name": "account_userId_idx",
+          "columns": [
+            "user_id"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {
+        "account_user_id_user_id_fk": {
+          "name": "account_user_id_user_id_fk",
+          "tableFrom": "account",
+          "tableTo": "user",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "session": {
+      "name": "session",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "expires_at": {
+          "name": "expires_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "token": {
+          "name": "token",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "(cast(unixepoch('subsecond') * 1000 as integer))"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "ip_address": {
+          "name": "ip_address",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "user_agent": {
+          "name": "user_agent",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {
+        "session_token_unique": {
+          "name": "session_token_unique",
+          "columns": [
+            "token"
+          ],
+          "isUnique": true
+        },
+        "session_userId_idx": {
+          "name": "session_userId_idx",
+          "columns": [
+            "user_id"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {
+        "session_user_id_user_id_fk": {
+          "name": "session_user_id_user_id_fk",
+          "tableFrom": "session",
+          "tableTo": "user",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "user": {
+      "name": "user",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "email": {
+          "name": "email",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "email_verified": {
+          "name": "email_verified",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": false
+        },
+        "image": {
+          "name": "image",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "(cast(unixepoch('subsecond') * 1000 as integer))"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "(cast(unixepoch('subsecond') * 1000 as integer))"
+        }
+      },
+      "indexes": {
+        "user_email_unique": {
+          "name": "user_email_unique",
+          "columns": [
+            "email"
+          ],
+          "isUnique": true
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "verification": {
+      "name": "verification",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "identifier": {
+          "name": "identifier",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "value": {
+          "name": "value",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "expires_at": {
+          "name": "expires_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "(cast(unixepoch('subsecond') * 1000 as integer))"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "(cast(unixepoch('subsecond') * 1000 as integer))"
+        }
+      },
+      "indexes": {
+        "verification_identifier_idx": {
+          "name": "verification_identifier_idx",
+          "columns": [
+            "identifier"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "appointment_managers": {
+      "name": "appointment_managers",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "appointment_id": {
+          "name": "appointment_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "email_normalized": {
+          "name": "email_normalized",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "role": {
+          "name": "role",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {
+        "appointment_managers_appointment_email_unique": {
+          "name": "appointment_managers_appointment_email_unique",
+          "columns": [
+            "appointment_id",
+            "email_normalized"
+          ],
+          "isUnique": true
+        },
+        "appointment_managers_appointment_user_unique": {
+          "name": "appointment_managers_appointment_user_unique",
+          "columns": [
+            "appointment_id",
+            "user_id"
+          ],
+          "isUnique": true,
+          "where": "\"appointment_managers\".\"user_id\" IS NOT NULL"
+        },
+        "appointment_managers_owner_unique": {
+          "name": "appointment_managers_owner_unique",
+          "columns": [
+            "appointment_id"
+          ],
+          "isUnique": true,
+          "where": "\"appointment_managers\".\"role\" = 'OWNER'"
+        },
+        "appointment_managers_email_lookup": {
+          "name": "appointment_managers_email_lookup",
+          "columns": [
+            "email_normalized"
+          ],
+          "isUnique": false
+        },
+        "appointment_managers_user_lookup": {
+          "name": "appointment_managers_user_lookup",
+          "columns": [
+            "user_id"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {
+        "appointment_managers_appointment_id_appointments_id_fk": {
+          "name": "appointment_managers_appointment_id_appointments_id_fk",
+          "tableFrom": "appointment_managers",
+          "tableTo": "appointments",
+          "columnsFrom": [
+            "appointment_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "appointment_managers_user_id_user_id_fk": {
+          "name": "appointment_managers_user_id_user_id_fk",
+          "tableFrom": "appointment_managers",
+          "tableTo": "user",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {
+        "appointment_managers_role_values": {
+          "name": "appointment_managers_role_values",
+          "value": "\"appointment_managers\".\"role\" IN ('OWNER', 'COORGANIZER')"
+        }
+      }
+    },
+    "appointment_options": {
+      "name": "appointment_options",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "appointment_id": {
+          "name": "appointment_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "creator_participant_id": {
+          "name": "creator_participant_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "start_date": {
+          "name": "start_date",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "end_date": {
+          "name": "end_date",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "start_at": {
+          "name": "start_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "end_at": {
+          "name": "end_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "canonical_key": {
+          "name": "canonical_key",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {
+        "appointment_options_appointment_id_unique": {
+          "name": "appointment_options_appointment_id_unique",
+          "columns": [
+            "appointment_id",
+            "id"
+          ],
+          "isUnique": true
+        },
+        "appointment_options_appointment_canonical_key_unique": {
+          "name": "appointment_options_appointment_canonical_key_unique",
+          "columns": [
+            "appointment_id",
+            "canonical_key"
+          ],
+          "isUnique": true
+        },
+        "appointment_options_creator_lookup": {
+          "name": "appointment_options_creator_lookup",
+          "columns": [
+            "appointment_id",
+            "creator_participant_id"
+          ],
+          "isUnique": false
+        },
+        "appointment_options_order": {
+          "name": "appointment_options_order",
+          "columns": [
+            "appointment_id",
+            "start_date",
+            "start_at",
+            "created_at",
+            "id"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {
+        "appointment_options_appointment_id_appointments_id_fk": {
+          "name": "appointment_options_appointment_id_appointments_id_fk",
+          "tableFrom": "appointment_options",
+          "tableTo": "appointments",
+          "columnsFrom": [
+            "appointment_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "appointment_options_creator_participant_fk": {
+          "name": "appointment_options_creator_participant_fk",
+          "tableFrom": "appointment_options",
+          "tableTo": "participants",
+          "columnsFrom": [
+            "appointment_id",
+            "creator_participant_id"
+          ],
+          "columnsTo": [
+            "appointment_id",
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {
+        "appointment_options_shape": {
+          "name": "appointment_options_shape",
+          "value": "(\n        \"appointment_options\".\"start_date\" IS NOT NULL\n        AND \"appointment_options\".\"end_date\" IS NULL\n        AND \"appointment_options\".\"start_at\" IS NULL\n        AND \"appointment_options\".\"end_at\" IS NULL\n      ) OR (\n        \"appointment_options\".\"start_date\" IS NOT NULL\n        AND \"appointment_options\".\"end_date\" IS NOT NULL\n        AND \"appointment_options\".\"end_date\" >= \"appointment_options\".\"start_date\"\n        AND \"appointment_options\".\"start_at\" IS NULL\n        AND \"appointment_options\".\"end_at\" IS NULL\n      ) OR (\n        \"appointment_options\".\"start_date\" IS NULL\n        AND \"appointment_options\".\"end_date\" IS NULL\n        AND \"appointment_options\".\"start_at\" IS NOT NULL\n        AND \"appointment_options\".\"end_at\" IS NULL\n      ) OR (\n        \"appointment_options\".\"start_date\" IS NULL\n        AND \"appointment_options\".\"end_date\" IS NULL\n        AND \"appointment_options\".\"start_at\" IS NOT NULL\n        AND \"appointment_options\".\"end_at\" IS NOT NULL\n        AND \"appointment_options\".\"end_at\" > \"appointment_options\".\"start_at\"\n      )"
+        }
+      }
+    },
+    "appointments": {
+      "name": "appointments",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "public_id": {
+          "name": "public_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "owner_user_id": {
+          "name": "owner_user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "title": {
+          "name": "title",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "description": {
+          "name": "description",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "type": {
+          "name": "type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "option_limit": {
+          "name": "option_limit",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 10
+        },
+        "final_option_id": {
+          "name": "final_option_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "revision": {
+          "name": "revision",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {
+        "appointments_public_id_unique": {
+          "name": "appointments_public_id_unique",
+          "columns": [
+            "public_id"
+          ],
+          "isUnique": true
+        },
+        "appointments_owner_user_lookup": {
+          "name": "appointments_owner_user_lookup",
+          "columns": [
+            "owner_user_id"
+          ],
+          "isUnique": false
+        },
+        "appointments_final_option_lookup": {
+          "name": "appointments_final_option_lookup",
+          "columns": [
+            "final_option_id"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {
+        "appointments_owner_user_id_user_id_fk": {
+          "name": "appointments_owner_user_id_user_id_fk",
+          "tableFrom": "appointments",
+          "tableTo": "user",
+          "columnsFrom": [
+            "owner_user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "appointments_final_option_id_appointment_options_id_fk": {
+          "name": "appointments_final_option_id_appointment_options_id_fk",
+          "tableFrom": "appointments",
+          "tableTo": "appointment_options",
+          "columnsFrom": [
+            "final_option_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {
+        "appointments_id_nonempty": {
+          "name": "appointments_id_nonempty",
+          "value": "length(\"appointments\".\"id\") > 0"
+        },
+        "appointments_public_id_format": {
+          "name": "appointments_public_id_format",
+          "value": "length(\"appointments\".\"public_id\") = 24\n        AND \"appointments\".\"public_id\" NOT GLOB '*[^A-Za-z0-9_-]*'"
+        },
+        "appointments_owner_user_id_nonempty": {
+          "name": "appointments_owner_user_id_nonempty",
+          "value": "length(\"appointments\".\"owner_user_id\") > 0"
+        },
+        "appointments_title_length": {
+          "name": "appointments_title_length",
+          "value": "length(\"appointments\".\"title\") BETWEEN 1 AND 120"
+        },
+        "appointments_description_length": {
+          "name": "appointments_description_length",
+          "value": "\"appointments\".\"description\" IS NULL OR length(\"appointments\".\"description\") <= 2000"
+        },
+        "appointments_type_values": {
+          "name": "appointments_type_values",
+          "value": "\"appointments\".\"type\" IN ('DATE', 'DATE_TIME', 'DATE_RANGE', 'DATE_TIME_RANGE')"
+        },
+        "appointments_status_values": {
+          "name": "appointments_status_values",
+          "value": "\"appointments\".\"status\" IN ('ACTIVE', 'FINALIZED')"
+        },
+        "appointments_option_limit_bounds": {
+          "name": "appointments_option_limit_bounds",
+          "value": "typeof(\"appointments\".\"option_limit\") = 'integer'\n        AND \"appointments\".\"option_limit\" BETWEEN 1 AND 100"
+        },
+        "appointments_revision_minimum": {
+          "name": "appointments_revision_minimum",
+          "value": "typeof(\"appointments\".\"revision\") = 'integer' AND \"appointments\".\"revision\" >= 1"
+        },
+        "appointments_created_at_integer": {
+          "name": "appointments_created_at_integer",
+          "value": "typeof(\"appointments\".\"created_at\") = 'integer'"
+        },
+        "appointments_updated_at_integer": {
+          "name": "appointments_updated_at_integer",
+          "value": "typeof(\"appointments\".\"updated_at\") = 'integer'"
+        },
+        "appointments_status_final_option_pair": {
+          "name": "appointments_status_final_option_pair",
+          "value": "(\n        \"appointments\".\"status\" = 'ACTIVE' AND \"appointments\".\"final_option_id\" IS NULL\n      ) OR (\n        \"appointments\".\"status\" = 'FINALIZED' AND \"appointments\".\"final_option_id\" IS NOT NULL\n      )"
+        }
+      }
+    },
+    "guest_session_access": {
+      "name": "guest_session_access",
+      "columns": {
+        "session_token_hash": {
+          "name": "session_token_hash",
+          "type": "blob",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "participant_id": {
+          "name": "participant_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {
+        "guest_session_access_participant_lookup": {
+          "name": "guest_session_access_participant_lookup",
+          "columns": [
+            "participant_id"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {
+        "guest_session_access_session_fk": {
+          "name": "guest_session_access_session_fk",
+          "tableFrom": "guest_session_access",
+          "tableTo": "guest_sessions",
+          "columnsFrom": [
+            "session_token_hash"
+          ],
+          "columnsTo": [
+            "token_hash"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "guest_session_access_participant_fk": {
+          "name": "guest_session_access_participant_fk",
+          "tableFrom": "guest_session_access",
+          "tableTo": "participants",
+          "columnsFrom": [
+            "participant_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "guest_session_access_session_participant_pk": {
+          "columns": [
+            "session_token_hash",
+            "participant_id"
+          ],
+          "name": "guest_session_access_session_participant_pk"
+        }
+      },
+      "uniqueConstraints": {},
+      "checkConstraints": {
+        "guest_session_access_token_hash_blob_32": {
+          "name": "guest_session_access_token_hash_blob_32",
+          "value": "typeof(\"guest_session_access\".\"session_token_hash\") = 'blob' AND length(\"guest_session_access\".\"session_token_hash\") = 32"
+        }
+      }
+    },
+    "guest_sessions": {
+      "name": "guest_sessions",
+      "columns": {
+        "token_hash": {
+          "name": "token_hash",
+          "type": "blob",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "expires_at": {
+          "name": "expires_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "last_seen_at": {
+          "name": "last_seen_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {
+        "guest_sessions_expiry_lookup": {
+          "name": "guest_sessions_expiry_lookup",
+          "columns": [
+            "expires_at"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {
+        "guest_sessions_token_hash_blob_32": {
+          "name": "guest_sessions_token_hash_blob_32",
+          "value": "typeof(\"guest_sessions\".\"token_hash\") = 'blob' AND length(\"guest_sessions\".\"token_hash\") = 32"
+        },
+        "guest_sessions_expiry_order": {
+          "name": "guest_sessions_expiry_order",
+          "value": "\"guest_sessions\".\"expires_at\" > \"guest_sessions\".\"created_at\""
+        }
+      }
+    },
+    "participants": {
+      "name": "participants",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "appointment_id": {
+          "name": "appointment_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "display_name": {
+          "name": "display_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "normalized_name": {
+          "name": "normalized_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "edit_token_hash": {
+          "name": "edit_token_hash",
+          "type": "blob",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {
+        "participants_appointment_id_unique": {
+          "name": "participants_appointment_id_unique",
+          "columns": [
+            "appointment_id",
+            "id"
+          ],
+          "isUnique": true
+        },
+        "participants_appointment_name_unique": {
+          "name": "participants_appointment_name_unique",
+          "columns": [
+            "appointment_id",
+            "normalized_name"
+          ],
+          "isUnique": true
+        },
+        "participants_appointment_user_unique": {
+          "name": "participants_appointment_user_unique",
+          "columns": [
+            "appointment_id",
+            "user_id"
+          ],
+          "isUnique": true,
+          "where": "\"participants\".\"user_id\" IS NOT NULL"
+        },
+        "participants_name_lookup": {
+          "name": "participants_name_lookup",
+          "columns": [
+            "normalized_name"
+          ],
+          "isUnique": false
+        },
+        "participants_user_lookup": {
+          "name": "participants_user_lookup",
+          "columns": [
+            "user_id"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {
+        "participants_appointment_id_appointments_id_fk": {
+          "name": "participants_appointment_id_appointments_id_fk",
+          "tableFrom": "participants",
+          "tableTo": "appointments",
+          "columnsFrom": [
+            "appointment_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "participants_user_id_user_id_fk": {
+          "name": "participants_user_id_user_id_fk",
+          "tableFrom": "participants",
+          "tableTo": "user",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {
+        "participants_display_name_length": {
+          "name": "participants_display_name_length",
+          "value": "length(\"participants\".\"display_name\") BETWEEN 1 AND 80"
+        },
+        "participants_normalized_name_nonempty": {
+          "name": "participants_normalized_name_nonempty",
+          "value": "length(\"participants\".\"normalized_name\") > 0"
+        },
+        "participants_edit_token_hash_blob_length": {
+          "name": "participants_edit_token_hash_blob_length",
+          "value": "\"participants\".\"edit_token_hash\" IS NULL OR (\n        typeof(\"participants\".\"edit_token_hash\") = 'blob'\n        AND length(\"participants\".\"edit_token_hash\") = 32\n      )"
+        }
+      }
+    },
+    "rate_limit_windows": {
+      "name": "rate_limit_windows",
+      "columns": {
+        "key": {
+          "name": "key",
+          "type": "blob",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "count": {
+          "name": "count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "window_started_at": {
+          "name": "window_started_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "expires_at": {
+          "name": "expires_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {
+        "rate_limit_windows_expiry_lookup": {
+          "name": "rate_limit_windows_expiry_lookup",
+          "columns": [
+            "expires_at"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {
+        "rate_limit_windows_key_blob_32": {
+          "name": "rate_limit_windows_key_blob_32",
+          "value": "typeof(\"rate_limit_windows\".\"key\") = 'blob' AND length(\"rate_limit_windows\".\"key\") = 32"
+        },
+        "rate_limit_windows_count_nonnegative": {
+          "name": "rate_limit_windows_count_nonnegative",
+          "value": "\"rate_limit_windows\".\"count\" >= 0"
+        },
+        "rate_limit_windows_expiry_order": {
+          "name": "rate_limit_windows_expiry_order",
+          "value": "\"rate_limit_windows\".\"expires_at\" > \"rate_limit_windows\".\"window_started_at\""
+        }
+      }
+    },
+    "responses": {
+      "name": "responses",
+      "columns": {
+        "appointment_id": {
+          "name": "appointment_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "participant_id": {
+          "name": "participant_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "option_id": {
+          "name": "option_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "value": {
+          "name": "value",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {
+        "responses_option_lookup": {
+          "name": "responses_option_lookup",
+          "columns": [
+            "appointment_id",
+            "option_id"
+          ],
+          "isUnique": false
+        },
+        "responses_participant_lookup": {
+          "name": "responses_participant_lookup",
+          "columns": [
+            "appointment_id",
+            "participant_id"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {
+        "responses_participant_fk": {
+          "name": "responses_participant_fk",
+          "tableFrom": "responses",
+          "tableTo": "participants",
+          "columnsFrom": [
+            "appointment_id",
+            "participant_id"
+          ],
+          "columnsTo": [
+            "appointment_id",
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "responses_option_fk": {
+          "name": "responses_option_fk",
+          "tableFrom": "responses",
+          "tableTo": "appointment_options",
+          "columnsFrom": [
+            "appointment_id",
+            "option_id"
+          ],
+          "columnsTo": [
+            "appointment_id",
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "responses_appointment_participant_option_pk": {
+          "columns": [
+            "appointment_id",
+            "participant_id",
+            "option_id"
+          ],
+          "name": "responses_appointment_participant_option_pk"
+        }
+      },
+      "uniqueConstraints": {},
+      "checkConstraints": {
+        "responses_value_values": {
+          "name": "responses_value_values",
+          "value": "\"responses\".\"value\" IN ('YES', 'NO')"
+        }
+      }
+    }
+  },
+  "views": {},
+  "enums": {},
+  "_meta": {
+    "schemas": {},
+    "tables": {},
+    "columns": {}
+  },
+  "internal": {
+    "indexes": {}
+  }
+}
