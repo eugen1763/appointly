@@ -332,7 +332,7 @@ export function ManageAppointmentPanel({
                 Currently {optionCount} of {optionLimit} options used.
               </p>
               <form className={styles.manageForm} onSubmit={submitOptionLimit}>
-                <div className={styles.manageField}>
+                <div className={`${styles.manageField} ${styles.manageFieldNarrow}`}>
                   <label htmlFor="manage-option-limit">Option limit</label>
                   <input
                     aria-describedby={limitError ? "manage-option-limit-error" : undefined}

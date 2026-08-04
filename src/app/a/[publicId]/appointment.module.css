@@ -1086,9 +1086,23 @@
   align-items: end;
 }
 
+/*
+ * Grows to the row rather than sitting at the input's intrinsic `size`, or the
+ * field stays ~20 characters wide and clips a real address at 320px. A native
+ * input compresses instead of overflowing, so no scrollWidth probe reports it.
+ */
 .manageField {
   display: grid;
   gap: var(--space-1);
+  flex: 1 1 14rem;
+  min-width: 0;
+  max-width: 22rem;
+}
+
+/* A three-digit limit needs no more room, and its button stays on the row. */
+.manageFieldNarrow {
+  flex: 0 0 auto;
+  max-width: 7rem;
 }
 
 .manageField label {
