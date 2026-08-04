@@ -720,6 +720,8 @@ export function AppointmentClient({ initialSnapshot }: AppointmentClientProps) {
   const [liveDisconnected, setLiveDisconnected] = useState(false);
   const [participantSelectionPending, setParticipantSelectionPending] = useState(false);
   const [joinedInThisView, setJoinedInThisView] = useState(false);
+  const [finalizedInSession, setFinalizedInSession] = useState(false);
+  const previousStatusRef = useRef(initialSnapshot.appointment.status);
   const deletedRef = useRef(false);
   const requestSequence = useRef(0);
   const activeParticipantIdRef = useRef(snapshot.viewer.activeParticipantId);
@@ -883,6 +885,21 @@ export function AppointmentClient({ initialSnapshot }: AppointmentClientProps) {
       setJoinedInThisView(false);
     }
   }, [currentViewAccessRevoked, snapshot.appointment.status]);
+
+  /* Presentation only: the stamp settles when finalization is watched happening,
+     never when an already-finalized appointment is merely opened. */
+  useEffect(() => {
+    if (
+      previousStatusRef.current === "ACTIVE"
+      && snapshot.appointment.status === "FINALIZED"
+    ) {
+      setFinalizedInSession(true);
+    }
+    if (snapshot.appointment.status === "ACTIVE") {
+      setFinalizedInSession(false); // reopen re-arms the stamp for a later re-finalize
+    }
+    previousStatusRef.current = snapshot.appointment.status;
+  }, [snapshot.appointment.status]);
 
   const linkedParticipants = snapshot.viewer.accessibleParticipants.map((participant) => ({
     participantId: participant.id,
@@ -1168,6 +1185,7 @@ export function AppointmentClient({ initialSnapshot }: AppointmentClientProps) {
         />
       )}
       renderOptionActions={renderOptionActions}
+      justFinalized={finalizedInSession}
       enrollmentControls={enrollmentControls}
       suggestionControls={suggestionControls}
       refreshError={liveDisconnected || snapshotRefreshError !== null ? (

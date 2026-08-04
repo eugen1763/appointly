@@ -188,6 +188,28 @@ describe("PublicAppointmentView", () => {
   });
 });
 
+describe("the chosen stamp's session gating", () => {
+  function stamp(): Element | null {
+    return container.querySelector('tbody th[data-selected="true"] span');
+  }
+
+  it("carries no just-finalized flag by default", () => {
+    renderView();
+
+    expect(stamp()?.textContent).toBe("CHOSEN");
+    expect(stamp()?.getAttribute("data-just-finalized")).toBeNull();
+  });
+
+  it("marks the stamp only when finalization happened in this session", () => {
+    act(() => root.render(
+      <PublicAppointmentView appointment={appointment} justFinalized />,
+    ));
+
+    expect(stamp()?.textContent).toBe("CHOSEN");
+    expect(stamp()?.getAttribute("data-just-finalized")).toBe("true");
+  });
+});
+
 describe("a board with no options", () => {
   const activeEmpty: PublicAppointment = {
     ...appointment,

@@ -44,6 +44,7 @@
   --headline-measure: 14ch;  --rule-width: 0.0625rem;
   --focus-width: 0.1875rem;  --focus-offset: 0.1875rem;   /* unchanged: e2e requires an opaque outline */
   --transition-fast: 130ms cubic-bezier(0.2, 0, 0, 1);
+  --transition-tally: 450ms cubic-bezier(0.22, 1, 0.36, 1);
   --ledger-max-height: 42rem;  --layer-sticky: 1;  --layer-sticky-corner: 2;
   --shadow-1: 0 1px 2px rgb(20 26 46 / 6%), 0 4px 12px rgb(20 26 46 / 5%);   /* new */
   --shadow-2: 0 8px 24px rgb(20 26 46 / 10%), 0 2px 6px rgb(20 26 46 / 6%);  /* new */
@@ -99,11 +100,15 @@ textarea {
   outline-offset: var(--focus-offset);
 }
 
+/* animation, not just transition: every animation in the app is a decorative
+   enter whose end state equals the resting state, so cancelling it outright
+   leaves the interface exactly where it would have settled. */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
   *::after {
     scroll-behavior: auto !important;
     transition: none !important;
+    animation: none !important;
   }
 }

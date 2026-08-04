@@ -607,6 +607,21 @@
   vertical-align: middle;
 }
 
+@keyframes stampIn {
+  from { opacity: 0; transform: scale(1.08); }
+}
+
+/* Only when finalization happened in this session: opening an appointment that
+   was already finalized is not an event, and stamping it on every load would
+   announce something that did not just happen. */
+.chosenStamp[data-just-finalized="true"] {
+  animation: stampIn 240ms cubic-bezier(0.2, 0, 0, 1);
+}
+
+@keyframes markIn {
+  from { opacity: 0; transform: translateY(2px); }
+}
+
 .leadingMark {
   display: inline-block;
   margin-left: var(--space-2);
@@ -616,6 +631,7 @@
   font-weight: 700;
   letter-spacing: 0.06em;
   vertical-align: middle;
+  animation: markIn 180ms cubic-bezier(0.2, 0, 0, 1);
 }
 
 .tally {
@@ -628,11 +644,15 @@
   background: var(--color-border);
 }
 
+/* The <i> keeps DOM identity across SSE refreshes (rows are keyed by option id
+   and the sum cell is unconditional), so a Yes arriving live fills the bar
+   instead of snapping. Transitions fire only on a width change, so the first
+   paint never animates. */
 .tally > i {
   display: block;
   height: 100%;
   background: var(--color-yes);
-  transition: width var(--transition-fast);
+  transition: width var(--transition-tally);
 }
 
 .tallyCount {

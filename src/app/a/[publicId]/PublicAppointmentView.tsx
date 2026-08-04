@@ -113,6 +113,12 @@ export interface PublicAppointmentViewProps {
   readonly suggestionControls?: ReactNode;
   readonly refreshError?: ReactNode;
   readonly onRefresh?: () => void;
+  /**
+   * Whether finalization was observed in this session. Optional and undefined by
+   * default so a server render — which cannot know — simply omits the attribute,
+   * which is also why the first client render matches it.
+   */
+  readonly justFinalized?: boolean;
 }
 
 export function PublicAppointmentView({
@@ -133,6 +139,7 @@ export function PublicAppointmentView({
   suggestionControls = null,
   refreshError = null,
   onRefresh,
+  justFinalized,
 }: Readonly<PublicAppointmentViewProps>) {
   const finalized = appointment.appointment.status === "FINALIZED";
   const { participants, options } = appointment;
@@ -276,7 +283,14 @@ export function PublicAppointmentView({
                             data-option-id={option.id}
                             data-selected={selected ? "true" : undefined}
                           >
-                            {selected ? <span className={styles.chosenStamp}>CHOSEN</span> : null}
+                            {selected ? (
+                              <span
+                                className={styles.chosenStamp}
+                                data-just-finalized={justFinalized ? "true" : undefined}
+                              >
+                                CHOSEN
+                              </span>
+                            ) : null}
                             <OptionLabel option={option} />
                           </th>
                           {renderResponseControl ? (

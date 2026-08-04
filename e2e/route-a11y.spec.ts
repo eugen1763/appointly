@@ -1,6 +1,7 @@
 import AxeBuilder from "@axe-core/playwright";
 import type { Page } from "@playwright/test";
 
+import { createAppointmentSuccessSchema } from "../src/features/appointments/contracts";
 import { createAppointmentThroughWizard, openManageTools } from "./appointment-helpers";
 import { expect, test } from "./fixtures";
 
@@ -169,4 +170,71 @@ test("every route passes axe in both colour schemes", async ({
 
   console.log(`AXE INCOMPLETE (${incompleteLog.length} entries, not gated):`);
   for (const line of incompleteLog) console.log(`  ${line}`);
+});
+
+/**
+ * Runs in every engine: reduced motion is a promise to the user, not a Chromium
+ * feature. Both directions are asserted, so a deleted rule cannot pass silently
+ * by making everything look motionless.
+ */
+test("reduced motion is honoured", async ({ ownerPage, page }) => {
+  await ownerPage.goto("/dashboard");
+  // Same-origin browser fetch: the route requires a matching Origin header,
+  // which an APIRequestContext omits.
+  const created = await ownerPage.evaluate(async (input) => {
+    const response = await fetch("/api/appointments", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(input),
+    });
+    return { status: response.status, body: (await response.json()) as unknown };
+  }, {
+    title: "Phase 6 reduced motion",
+    description: null,
+    ownerDisplayName: "Reduced Motion Owner",
+    type: "DATE",
+    optionLimit: 2,
+    coOrganizerEmails: [],
+    timeZone: "UTC",
+    options: [
+      { kind: "DATE", startDate: "2029-12-03" },
+      { kind: "DATE", startDate: "2029-12-04" },
+    ],
+  });
+  expect(created.status, "appointment creation status").toBe(201);
+  const appointment = createAppointmentSuccessSchema.parse(created.body);
+
+  await page.goto(appointment.publicUrl);
+  await joinAs(page, "Reduced Motion Guest");
+  const group = page.getByRole("group", { name: "December 3, 2029", exact: true });
+  const saved = page.waitForResponse((response) => (
+    response.request().method() === "PUT"
+    && new URL(response.url()).pathname.includes("/responses/")
+  ));
+  await group.getByRole("radio", { name: "Yes", exact: true }).check();
+  expect((await saved).status()).toBe(200);
+
+  const tallyFill = page.locator('span[role="img"][aria-label*="say yes"] > i').first();
+  const leadingMark = page.getByText("LEADING", { exact: true });
+  await expect(leadingMark).toBeVisible();
+
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  expect(
+    await tallyFill.evaluate((node) => getComputedStyle(node).transitionDuration),
+    "tally fill does not transition under reduced motion",
+  ).toBe("0s");
+  expect(
+    await leadingMark.evaluate((node) => getComputedStyle(node).animationName),
+    "leading mark does not animate under reduced motion",
+  ).toBe("none");
+
+  await page.emulateMedia({ reducedMotion: "no-preference" });
+  expect(
+    await tallyFill.evaluate((node) => getComputedStyle(node).transitionDuration),
+    "tally fill transitions when motion is allowed",
+  ).toBe("0.45s");
+  expect(
+    await leadingMark.evaluate((node) => getComputedStyle(node).animationName),
+    "leading mark animates when motion is allowed",
+  ).not.toBe("none");
 });

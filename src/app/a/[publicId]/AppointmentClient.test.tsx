@@ -1545,6 +1545,33 @@ describe("AppointmentClient finalization", () => {
       `tbody th[data-option-id="${OPTION_TWO_ID}"][data-selected="true"]`,
     )?.textContent).toContain("CHOSEN");
   });
+
+  /* The stamp settles only for someone who watched it happen. Both directions
+     are pinned, so neither a missing flag nor an always-on one passes quietly. */
+  it("marks the stamp when finalization is watched happening in this session", async () => {
+    fetchMock
+      .mockResolvedValueOnce(jsonResponse({ revision: 2 }))
+      .mockResolvedValueOnce(jsonResponse(finalizedSnapshot()));
+    await act(async () => root.render(
+      <AppointmentClient initialSnapshot={managerSnapshot()} />,
+    ));
+
+    await act(async () => submitFinalize(OPTION_TWO_ID));
+
+    expect(container.querySelector("[data-just-finalized='true']")?.textContent)
+      .toBe("CHOSEN");
+  });
+
+  it("never marks the stamp on an appointment that was already finalized on load", async () => {
+    await act(async () => root.render(
+      <AppointmentClient initialSnapshot={finalizedSnapshot()} />,
+    ));
+
+    expect(container.querySelector(
+      `tbody th[data-option-id="${OPTION_TWO_ID}"][data-selected="true"]`,
+    )?.textContent).toContain("CHOSEN");
+    expect(container.querySelector("[data-just-finalized]")).toBeNull();
+  });
 });
 
 describe("AppointmentClient appointment lifecycle controls", () => {
