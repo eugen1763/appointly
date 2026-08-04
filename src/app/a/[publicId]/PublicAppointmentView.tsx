@@ -108,6 +108,8 @@ export interface PublicAppointmentViewProps {
   readonly showJoinForm?: boolean;
   readonly renderResponseControl?: (option: PublicOption) => ReactNode;
   readonly renderOptionActions?: (option: PublicOption) => ReactNode;
+  /** Shown when snapshot auto-enrolment could not give a manager a participant. */
+  readonly enrollmentControls?: ReactNode;
   readonly suggestionControls?: ReactNode;
   readonly refreshError?: ReactNode;
   readonly onRefresh?: () => void;
@@ -127,6 +129,7 @@ export function PublicAppointmentView({
   showJoinForm = true,
   renderResponseControl,
   renderOptionActions,
+  enrollmentControls = null,
   suggestionControls = null,
   refreshError = null,
   onRefresh,
@@ -201,6 +204,7 @@ export function PublicAppointmentView({
             onJoined={onJoined}
           />
         ) : null}
+        {enrollmentControls}
 
         <section aria-labelledby="board-heading" className={styles.boardSection}>
           <p className={routeStyles.kicker}>Shared response board</p>

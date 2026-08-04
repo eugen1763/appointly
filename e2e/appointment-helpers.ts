@@ -456,3 +456,14 @@ export async function readAppointmentSnapshot(
   const payload: unknown = await response.json();
   return appointmentSnapshotSchema.parse(payload);
 }
+
+/** Opens the collapsed administration surface on the appointment page. */
+export async function openManageTools(page: Page): Promise<void> {
+  const toggle = page.getByRole("button", {
+    name: "Manage appointment",
+    exact: true,
+  });
+  await expect(toggle).toBeVisible();
+  if (await toggle.getAttribute("aria-expanded") === "false") await toggle.click();
+  await expect(toggle).toHaveAttribute("aria-expanded", "true");
+}

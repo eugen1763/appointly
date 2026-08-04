@@ -33,6 +33,7 @@ import {
 } from "./guest-selection-storage";
 import { InlineOptionAdd } from "./InlineOptionAdd";
 import { ManageAppointmentPanel } from "./ManageAppointmentPanel";
+import { ManagerEnrollmentForm } from "./ManagerEnrollmentForm";
 import {
   OptionLabel,
   PublicAppointmentView,
@@ -1068,6 +1069,29 @@ export function AppointmentClient({ initialSnapshot }: AppointmentClientProps) {
     : null;
   // The flag is already ACTIVE-only, so a finalized appointment reads as plain text.
   const canEditDetails = snapshot.viewer.permissions.canEditAppointment;
+  /*
+   * The snapshot enrols managers itself; this only appears when it could not —
+   * the derived name was taken or invalid, or the appointment is already full.
+   */
+  const enrollmentControls = snapshot.viewer.kind === "authenticated"
+    && snapshot.appointment.status === "ACTIVE"
+    && activeParticipantId === null
+    && (
+      snapshot.viewer.needsParticipantName
+      || snapshot.viewer.participantEnrollmentError !== null
+    )
+    ? (
+      <ManagerEnrollmentForm
+        enrollmentError={snapshot.viewer.participantEnrollmentError}
+        publicId={publicId}
+        onEnrolled={async (participantId) => {
+          const selectionRequest = participantSelectionRequest.current;
+          if (selectionRequest !== null) await selectionRequest;
+          await refreshSnapshot(participantId);
+        }}
+      />
+    )
+    : null;
 
   function detailsSaved(patch: AppointmentDetailPatch, revision: number): void {
     renderedRevisionRef.current = Math.max(renderedRevisionRef.current, revision);
@@ -1131,6 +1155,7 @@ export function AppointmentClient({ initialSnapshot }: AppointmentClientProps) {
         />
       )}
       renderOptionActions={renderOptionActions}
+      enrollmentControls={enrollmentControls}
       suggestionControls={suggestionControls}
       refreshError={liveDisconnected || snapshotRefreshError !== null ? (
         <>

@@ -229,3 +229,185 @@ describe("ManageAppointmentPanel delete section", () => {
     expect(container.querySelector("[data-delete-appointment]")).toBeNull();
   });
 });
+
+describe("ManageAppointmentPanel co-organizers", () => {
+  const OWNER_MANAGER = {
+    id: "00000000-0000-4000-8000-000000000901",
+    email: "owner@example.com",
+    role: "OWNER",
+    status: "BOUND",
+    canRemove: false,
+  } as const;
+  const CO_ORGANIZER = {
+    id: "00000000-0000-4000-8000-000000000902",
+    email: "casey@example.com",
+    role: "COORGANIZER",
+    status: "PENDING",
+    canRemove: true,
+  } as const;
+
+  async function renderOwnerPanel(): Promise<void> {
+    await renderPanel({
+      permissions: {
+        ...NO_PERMISSIONS,
+        canEditAppointment: true,
+        canManageCoOrganizers: true,
+      },
+    });
+  }
+
+  function managerRows(): readonly HTMLLIElement[] {
+    const list = container.querySelector("ul[aria-label='Co-organizers']");
+    return list === null ? [] : Array.from(list.querySelectorAll("li"));
+  }
+
+  function emailInput(): HTMLInputElement {
+    const element = container.querySelector("#manage-co-organizer-email");
+    if (!(element instanceof HTMLInputElement)) throw new Error("Email input not found");
+    return element;
+  }
+
+  async function setEmail(value: string): Promise<void> {
+    const input = emailInput();
+    await act(async () => {
+      const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")?.set;
+      if (!setter) throw new Error("Input value setter not found");
+      setter.call(input, value);
+      input.dispatchEvent(new Event("input", { bubbles: true }));
+    });
+  }
+
+  it("loads the list once on first expand and lists owner and co-organizer rows", async () => {
+    fetchMock.mockResolvedValue(jsonResponse({
+      managers: [OWNER_MANAGER, CO_ORGANIZER],
+    }));
+    await renderOwnerPanel();
+
+    expect(fetchMock).not.toHaveBeenCalled();
+
+    await openPanel();
+
+    expect(fetchMock).toHaveBeenCalledExactlyOnceWith(
+      `/api/appointments/${PUBLIC_ID}/managers`,
+    );
+    expect(managerRows()).toHaveLength(2);
+    expect(managerRows()[0]?.textContent).toContain("owner@example.com");
+    expect(managerRows()[0]?.textContent).toContain("Owner");
+    expect(managerRows()[0]?.querySelector("button")).toBeNull();
+    expect(managerRows()[1]?.textContent).toContain("Pending");
+    expect(managerRows()[1]?.querySelector("button")?.getAttribute("aria-label"))
+      .toBe("Remove casey@example.com");
+    expect(panel()?.textContent).toContain("1 of 20 co-organizers");
+
+    await openPanel();
+    await openPanel();
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("offers a retry when the list cannot be loaded", async () => {
+    fetchMock.mockResolvedValueOnce(jsonResponse({
+      error: { code: "FORBIDDEN", message: "Appointment owner access is required." },
+    }, 403));
+    await renderOwnerPanel();
+    await openPanel();
+
+    expect(alertText()).toContain("Appointment owner access is required.");
+
+    fetchMock.mockResolvedValueOnce(jsonResponse({ managers: [OWNER_MANAGER] }));
+    await act(async () => button("Retry").click());
+
+    expect(managerRows()).toHaveLength(1);
+    expect(container.querySelector('[role="alert"]')).toBeNull();
+  });
+
+  it("appends the manager the server returned, not the typed address", async () => {
+    fetchMock.mockResolvedValueOnce(jsonResponse({ managers: [OWNER_MANAGER] }));
+    await renderOwnerPanel();
+    await openPanel();
+
+    fetchMock.mockResolvedValueOnce(jsonResponse({
+      manager: { ...CO_ORGANIZER, status: "BOUND" },
+      revision: 4,
+    }, 201));
+    await setEmail("  Casey@Example.COM ");
+    await act(async () => button("Add co-organizer").click());
+
+    const [url, init] = fetchMock.mock.calls[1] as [string, RequestInit];
+    expect(url).toBe(`/api/appointments/${PUBLIC_ID}/managers`);
+    expect(init.method).toBe("POST");
+    // type="email" strips surrounding whitespace itself; the case is left to the server.
+    expect(init.body).toBe('{"email":"Casey@Example.COM"}');
+    expect(managerRows()).toHaveLength(2);
+    expect(managerRows()[1]?.textContent).toContain("casey@example.com");
+    expect(managerRows()[1]?.textContent).toContain("Bound");
+    expect(emailInput().value).toBe("");
+    expect(panel()?.textContent).toContain("1 of 20 co-organizers");
+  });
+
+  it("surfaces duplicate and cap failures from the server", async () => {
+    fetchMock.mockResolvedValueOnce(jsonResponse({ managers: [OWNER_MANAGER] }));
+    await renderOwnerPanel();
+    await openPanel();
+
+    fetchMock.mockResolvedValueOnce(jsonResponse({
+      error: {
+        code: "MANAGER_ALREADY_EXISTS",
+        message: "That email already belongs to an appointment manager.",
+      },
+    }, 409));
+    await setEmail("casey@example.com");
+    await act(async () => button("Add co-organizer").click());
+
+    expect(alertText()).toBe("That email already belongs to an appointment manager.");
+    expect(managerRows()).toHaveLength(1);
+
+    fetchMock.mockResolvedValueOnce(jsonResponse({
+      error: {
+        code: "COORGANIZER_LIMIT_REACHED",
+        message: "This appointment already has 20 co-organizers.",
+      },
+    }, 409));
+    await act(async () => button("Add co-organizer").click());
+
+    expect(alertText()).toBe("This appointment already has 20 co-organizers.");
+  });
+
+  it("removes a row with a bodyless, headerless DELETE", async () => {
+    fetchMock.mockResolvedValueOnce(jsonResponse({
+      managers: [OWNER_MANAGER, CO_ORGANIZER],
+    }));
+    await renderOwnerPanel();
+    await openPanel();
+
+    fetchMock.mockResolvedValueOnce(jsonResponse({ revision: 6 }));
+    await act(async () => button("Remove").click());
+
+    const [url, init] = fetchMock.mock.calls[1] as [string, RequestInit];
+    expect(url).toBe(`/api/appointments/${PUBLIC_ID}/managers/${CO_ORGANIZER.id}`);
+    expect(init).toEqual({ method: "DELETE" });
+    expect(managerRows()).toHaveLength(1);
+    expect(panel()?.textContent).toContain("0 of 20 co-organizers");
+  });
+
+  it("keeps the loaded list across a close and reopen", async () => {
+    fetchMock.mockResolvedValueOnce(jsonResponse({
+      managers: [OWNER_MANAGER, CO_ORGANIZER],
+    }));
+    await renderOwnerPanel();
+    await openPanel();
+    await openPanel();
+    await openPanel();
+
+    expect(managerRows()).toHaveLength(2);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("hides the section from a viewer who is not the owner", async () => {
+    await renderPanel();
+    await openPanel();
+
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(container.querySelector("ul[aria-label='Co-organizers']")).toBeNull();
+  });
+});
