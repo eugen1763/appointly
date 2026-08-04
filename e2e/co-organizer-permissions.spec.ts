@@ -254,10 +254,10 @@ test("co-organizer binds dashboard access and respects owner-only permissions", 
       name: CANDIDATE_LABEL,
       exact: true,
     }),
-  }).getByRole("form", { name: "Finalize appointment", exact: true });
+  }).locator("[data-finalize-form]");
   await expect(finalizeForm).toHaveAttribute("data-finalize-form", optionId);
   await finalizeForm.getByRole("button", {
-    name: "Finalize",
+    name: "Finalize appointment",
     exact: true,
   }).click();
 

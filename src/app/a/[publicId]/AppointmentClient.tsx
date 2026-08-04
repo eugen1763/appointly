@@ -966,8 +966,12 @@ export function AppointmentClient({ initialSnapshot }: AppointmentClientProps) {
     ? (option: PublicOption) => {
       const snapshotOption = snapshot.options.find(({ id }) => id === option.id);
       const finalize = canFinalize ? (
+        /* Unnamed on purpose: a named form is exposed as a landmark, and one
+           button in a table cell is a mechanism, not a page region — every row
+           claiming the same "Finalize appointment" region made the landmarks
+           indistinguishable. The name belongs on the control, described by the
+           option it acts on, exactly as the delete button below does. */
         <form
-          aria-label="Finalize appointment"
           className={styles.rowActionForm}
           data-finalize-form={option.id}
           onSubmit={(event) => {
@@ -976,6 +980,8 @@ export function AppointmentClient({ initialSnapshot }: AppointmentClientProps) {
           }}
         >
           <button
+            aria-describedby={`option-label-${option.id}`}
+            aria-label="Finalize appointment"
             className={styles.rowAction}
             disabled={finalization.pendingOptionId !== null}
             type="submit"

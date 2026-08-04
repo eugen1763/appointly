@@ -411,10 +411,8 @@ test("finalized participant writes are immutable until the owner reopens", async
     false,
   );
 
-  const finalizeForm = optionRow(ownerPage, INITIAL_DATE_LABEL).getByRole("form", {
-    name: "Finalize appointment",
-    exact: true,
-  });
+  const finalizeForm = optionRow(ownerPage, INITIAL_DATE_LABEL)
+    .locator("[data-finalize-form]");
   await expect(finalizeForm).toHaveCount(1);
   await expect(ownerPage.locator("[data-finalize-form]")).toHaveCount(2);
   await expect(finalizeForm).toHaveAttribute("data-finalize-form", initialOptionId);
@@ -425,7 +423,7 @@ test("finalized participant writes are immutable until the owner reopens", async
     finalizePath,
   );
   await finalizeForm
-    .getByRole("button", { name: "Finalize", exact: true })
+    .getByRole("button", { name: "Finalize appointment", exact: true })
     .click();
   const finalizeResponse = await finalizeResponsePromise;
   expect(finalizeResponse.status()).toBe(200);
@@ -638,7 +636,7 @@ test("finalized participant writes are immutable until the owner reopens", async
     await expect(ownerPage.locator("[data-finalize-form]")).toHaveCount(2);
     await expect(
       optionRow(ownerPage, INITIAL_DATE_LABEL)
-        .getByRole("button", { name: "Finalize", exact: true }),
+        .getByRole("button", { name: "Finalize appointment", exact: true }),
     ).toBeVisible();
     await expect(initialResponseGroup.getByRole("radio")).toHaveCount(3);
     await expect(

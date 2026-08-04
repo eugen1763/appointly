@@ -6,7 +6,7 @@
   --color-sunk: #f3f4f9;            /* new */
   --color-text: #141a2e;
   --color-text-muted: #4b5573;
-  --color-text-faint: #7b849e;      /* new */
+  --color-text-faint: #646d88;      /* AA on surface 5.14:1, paper 4.97:1, sunk 4.68:1 */
   --color-border: #cfd3e2;          /* core --rule-strong, so inputs keep visible borders */
   --color-border-subtle: #e7e9f0;   /* new — core --rule */
   --color-action: #3d2bd5;
@@ -52,7 +52,8 @@
 @media (prefers-color-scheme: dark) {
   :root {
     --color-background: #0c0f1a;   --color-surface: #141928;   --color-sunk: #1b2133;
-    --color-text: #eef0f8;         --color-text-muted: #a3abc6; --color-text-faint: #79809b;
+    /* text-faint: AA on surface 5.61:1, paper 6.13:1, sunk 5.13:1 */
+    --color-text: #eef0f8;         --color-text-muted: #a3abc6; --color-text-faint: #8a91ad;
     --color-border: #384260;       --color-border-subtle: #262d42;
     --color-action: #a99bff;       --color-action-soft: #251f52;
     --color-focus: #a99bff;

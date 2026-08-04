@@ -1375,14 +1375,20 @@ describe("AppointmentClient finalization", () => {
       OPTION_ONE_ID,
       OPTION_TWO_ID,
     ]);
-    expect(forms.every((form) => form.getAttribute("aria-label") === "Finalize appointment"))
-      .toBe(true);
+    /* The form stays unnamed so it is not exposed as a landmark: one button in
+       a table cell is a mechanism, not a page region, and a per-row landmark
+       named "Finalize appointment" is indistinguishable from its neighbours.
+       The name lives on the button, described by the option it acts on. */
+    expect(forms.every((form) => form.getAttribute("aria-label") === null)).toBe(true);
     for (const form of forms) {
+      const optionId = form.getAttribute("data-finalize-form");
       const submit = form.querySelector('button[type="submit"]');
       expect(submit?.textContent).toBe("Finalize");
+      expect(submit?.getAttribute("aria-label")).toBe("Finalize appointment");
+      expect(submit?.getAttribute("aria-describedby")).toBe(`option-label-${optionId}`);
       const row = form.closest("tr");
       expect(row?.querySelector("th[data-option-id]")?.getAttribute("data-option-id"))
-        .toBe(form.getAttribute("data-finalize-form"));
+        .toBe(optionId);
     }
   });
 
