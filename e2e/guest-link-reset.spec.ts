@@ -11,6 +11,7 @@ import {
 import type { AppointmentSnapshot } from "../src/features/appointments/contracts";
 import {
   createAppointmentThroughWizard,
+  openManageTools,
   readAppointmentSnapshot,
 } from "./appointment-helpers";
 import { E2E_BASE_URL } from "./auth-identities";
@@ -229,10 +230,25 @@ test("resetting a guest link revokes old access and preserves the participant re
       ),
     );
     const resetPath = `/api/appointments/${created.publicId}/participants/${joined.participantId}/reset-link`;
-    const resetResponse = await requestFromPage(ownerPage, {
-      method: "POST",
-      path: resetPath,
-    });
+    // The owner reissues the link from the Manage surface, not from the API.
+    await ownerPage.goto(created.publicUrl);
+    await openManageTools(ownerPage);
+    const guestRow = ownerPage.getByRole("list", { name: "Guest links", exact: true })
+      .getByRole("listitem")
+      .filter({ hasText: GUEST_NAME });
+    await expect(guestRow).toHaveCount(1);
+
+    const resetResponsePromise = waitForExactRouteResponse(
+      ownerPage,
+      "POST",
+      resetPath,
+    );
+    await guestRow.getByRole("button", {
+      name: `Reset link for ${GUEST_NAME}`,
+      exact: true,
+    }).click();
+    await guestRow.getByRole("button", { name: "Confirm reset", exact: true }).click();
+    const resetResponse = await resetResponsePromise;
     expect(resetResponse.status()).toBe(200);
     const resetPayload: unknown = await resetResponse.json();
     const reset = resetParticipantLinkSuccessSchema.parse(resetPayload);
@@ -242,7 +258,24 @@ test("resetting a guest link revokes old access and preserves the participant re
       "reset returns a different private href",
     ).toBe(false);
     expect(reset.revision).toBeGreaterThan(saved.revision);
-    const newPrivateHref = reset.editUrl;
+
+    const reissued = ownerPage.getByRole("group", {
+      name: `New private edit link for ${GUEST_NAME}`,
+      exact: true,
+    });
+    await expect(reissued).toBeVisible();
+    await expect(reissued.getByText(
+      "This link appears once. The previous link no longer works.",
+      { exact: true },
+    )).toBeVisible();
+    const reissuedLink = reissued.getByRole("link", {
+      name: "Private edit link",
+      exact: true,
+    });
+    await expect(reissuedLink).toHaveAttribute("href", reset.editUrl);
+    // Read from the UI, so the flow proves the organizer can actually reach it.
+    const newPrivateHref = await reissuedLink.getAttribute("href");
+    if (newPrivateHref === null) throw new Error("Reissued private link has no href");
 
     const oldSessionSnapshotResult = await oldSessionSnapshotPromise;
     expect(oldSessionSnapshotResult.response.status()).toBe(200);

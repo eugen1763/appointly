@@ -411,3 +411,192 @@ describe("ManageAppointmentPanel co-organizers", () => {
     expect(container.querySelector("ul[aria-label='Co-organizers']")).toBeNull();
   });
 });
+
+describe("ManageAppointmentPanel guest links", () => {
+  const AVERY = { id: "00000000-0000-4000-8000-000000000801", displayName: "Avery Guest" };
+  const BLAKE = { id: "00000000-0000-4000-8000-000000000802", displayName: "Blake Guest" };
+  const EDIT_URL = `/a/${PUBLIC_ID}/edit#participant=${AVERY.id}&token=${"A".repeat(43)}`;
+
+  async function renderGuestLinks(): Promise<void> {
+    await renderPanel({
+      participants: [AVERY, BLAKE],
+      permissions: { ...NO_PERMISSIONS, canResetGuestLinks: true },
+    });
+  }
+
+  function rows(): readonly HTMLLIElement[] {
+    const list = container.querySelector("ul[aria-label='Guest links']");
+    return list === null ? [] : Array.from(list.querySelectorAll("li"));
+  }
+
+  function averyRow(): HTMLLIElement {
+    const row = rows()[0];
+    if (row === undefined) throw new Error("Guest link row not found");
+    return row;
+  }
+
+  function resetGroup(): HTMLElement | null {
+    return container.querySelector<HTMLElement>(
+      `[role="group"][aria-label="New private edit link for ${AVERY.displayName}"]`,
+    );
+  }
+
+  async function armAndConfirm(): Promise<void> {
+    await act(async () => button(`Reset link`).click());
+    await act(async () => button("Confirm reset").click());
+  }
+
+  it("lists every participant, since the server accepts any of them", async () => {
+    await renderGuestLinks();
+    await openPanel();
+
+    expect(rows()).toHaveLength(2);
+    expect(averyRow().textContent).toContain(AVERY.displayName);
+    expect(rows()[1]?.textContent).toContain(BLAKE.displayName);
+    expect(averyRow().querySelector("button")?.getAttribute("aria-label"))
+      .toBe(`Reset link for ${AVERY.displayName}`);
+  });
+
+  it("requires the inline confirm before sending anything", async () => {
+    await renderGuestLinks();
+    await openPanel();
+    await act(async () => averyRow().querySelector("button")?.click());
+
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(averyRow().textContent).toContain(
+      `Reset the link for ${AVERY.displayName}? The current link stops working.`,
+    );
+
+    await act(async () => button("Cancel").click());
+
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(averyRow().querySelector("button")?.getAttribute("aria-label"))
+      .toBe(`Reset link for ${AVERY.displayName}`);
+  });
+
+  it("posts with no body and shows the once-only link", async () => {
+    fetchMock.mockResolvedValueOnce(jsonResponse({
+      participantId: AVERY.id,
+      editUrl: EDIT_URL,
+      revision: 7,
+    }));
+    await renderGuestLinks();
+    await openPanel();
+    await armAndConfirm();
+
+    const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+    expect(url).toBe(
+      `/api/appointments/${PUBLIC_ID}/participants/${AVERY.id}/reset-link`,
+    );
+    expect(init).toEqual({ method: "POST" });
+
+    const group = resetGroup();
+    expect(group).not.toBeNull();
+    expect(group?.querySelector("a")?.getAttribute("href")).toBe(EDIT_URL);
+    expect(group?.textContent).toContain(
+      "This link appears once. The previous link no longer works.",
+    );
+    expect(group?.textContent).toContain("Copy private link");
+    // Only the reset participant gets a link.
+    expect(rows()[1]?.querySelector('[role="group"]')).toBeNull();
+  });
+
+  it("replaces the shown link when the same participant is reset again", async () => {
+    fetchMock.mockResolvedValueOnce(jsonResponse({
+      participantId: AVERY.id,
+      editUrl: EDIT_URL,
+      revision: 7,
+    }));
+    await renderGuestLinks();
+    await openPanel();
+    await armAndConfirm();
+
+    const secondUrl = `${EDIT_URL}-second`;
+    fetchMock.mockResolvedValueOnce(jsonResponse({
+      participantId: AVERY.id,
+      editUrl: secondUrl,
+      revision: 9,
+    }));
+    await armAndConfirm();
+
+    expect(resetGroup()?.querySelectorAll("a")).toHaveLength(1);
+    expect(resetGroup()?.querySelector("a")?.getAttribute("href")).toBe(secondUrl);
+  });
+
+  it("keeps the once-only link across a close and reopen", async () => {
+    fetchMock.mockResolvedValueOnce(jsonResponse({
+      participantId: AVERY.id,
+      editUrl: EDIT_URL,
+      revision: 7,
+    }));
+    await renderGuestLinks();
+    await openPanel();
+    await armAndConfirm();
+    await openPanel();
+    await openPanel();
+
+    expect(resetGroup()?.querySelector("a")?.getAttribute("href")).toBe(EDIT_URL);
+  });
+
+  it("reports the contract failure in the row", async () => {
+    fetchMock.mockResolvedValueOnce(jsonResponse({
+      error: {
+        code: "APPOINTMENT_FINALIZED",
+        message: "Reopen the appointment before changing appointment details.",
+      },
+    }, 409));
+    await renderGuestLinks();
+    await openPanel();
+    await armAndConfirm();
+
+    expect(averyRow().querySelector('[role="alert"]')?.textContent)
+      .toBe("Reopen the appointment before changing appointment details.");
+    expect(resetGroup()).toBeNull();
+  });
+
+  it("falls back to a generic message for the uncontracted 500", async () => {
+    fetchMock.mockResolvedValueOnce(jsonResponse({
+      error: { code: "INTERNAL_ERROR", message: "Something went wrong." },
+    }, 500));
+    await renderGuestLinks();
+    await openPanel();
+    await armAndConfirm();
+
+    expect(averyRow().querySelector('[role="alert"]')?.textContent)
+      .toBe("Could not reset the private link. Try again.");
+  });
+
+  it("copies the link and reports both clipboard outcomes", async () => {
+    fetchMock.mockResolvedValueOnce(jsonResponse({
+      participantId: AVERY.id,
+      editUrl: EDIT_URL,
+      revision: 7,
+    }));
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    vi.stubGlobal("navigator", { clipboard: { writeText } });
+    await renderGuestLinks();
+    await openPanel();
+    await armAndConfirm();
+    await act(async () => button("Copy private link").click());
+
+    expect(writeText).toHaveBeenCalledExactlyOnceWith(EDIT_URL);
+    expect(resetGroup()?.textContent).toContain("Private link copied.");
+
+    writeText.mockRejectedValueOnce(new Error("denied"));
+    await act(async () => button("Copy private link").click());
+
+    expect(resetGroup()?.textContent).toContain(
+      "Copy failed. Open the private edit link and copy it from the address bar.",
+    );
+  });
+
+  it("omits the section when there are no participants", async () => {
+    await renderPanel({
+      participants: [],
+      permissions: { ...NO_PERMISSIONS, canResetGuestLinks: true },
+    });
+    await openPanel();
+
+    expect(container.querySelector("ul[aria-label='Guest links']")).toBeNull();
+  });
+});

@@ -1216,6 +1216,32 @@
   opacity: 0.65;
 }
 
+/* The confirm and the reissued link both belong to their row, so they wrap inside it. */
+.resetConfirm {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  align-items: center;
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+}
+
+.resetResult {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-3);
+  align-items: center;
+  flex-basis: 100%;
+  padding: var(--space-3);
+  border: var(--rule-width) solid var(--color-warning);
+  border-radius: var(--radius-sm);
+  background: var(--color-signal-soft);
+}
+
+.resetResult .privateLink {
+  overflow-wrap: anywhere;
+}
+
 /* Inside the panel it is a section, not a card — but it keeps its red rule. */
 .managePanelBody .deletePanel {
   margin-top: 0;
