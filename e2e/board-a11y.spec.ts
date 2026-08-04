@@ -232,12 +232,14 @@ test("the board answers correctly in every engine", async ({
     response.request().method() === "PUT"
     && new URL(response.url()).pathname.includes("/responses/")
   ));
-  /* How the selection is made is the engine's business, not the board's. Chromium
-     and Firefox move the selection with the arrow keys. Playwright's Linux WebKit
-     build does not: arrows leave the group untouched and Tab rovers straight past
-     it, so the only keyboard route to another answer is Space on the focused radio.
-     That is native radio-group behaviour, identical before and after this phase, so
-     the engines are branched here rather than the assertion being relaxed — every
+  /* How the selection is made is the engine's business, not the board's. Arrows move
+     the selection in every engine, but only Chromium and Firefox wrap around: their
+     ArrowRight goes from the last radio back to the first. Playwright's Linux WebKit
+     build stops at the end of the group instead, and Unanswered is last in DOM order,
+     so ArrowRight on the checked Unanswered radio does nothing there — Space on the
+     focused target radio is the route that works. That is native radio-group
+     behaviour — plain unstyled radios do the same, before and after this phase — so
+     the engines are branched here rather than the assertion being relaxed: every
      engine still has to produce the save, the checked state and the announcement. */
   if (browserName === "webkit") {
     await yesRadio.focus();

@@ -359,6 +359,11 @@ export async function tabTo(
  * .segFace. Reading the input itself would report the global :focus-visible outline
  * as visible while a sighted keyboard user sees nothing, so this reads the face and
  * demands an opaque indicator on it. Never assert a radio's focus on the input.
+ *
+ * A checked face already carries the opaque inset box-shadow of the checked rule, so
+ * accepting either indicator there would keep passing with the :focus-visible rule
+ * deleted — the guarantee could rot unnoticed. A checked radio therefore has to paint
+ * the outline itself; only an unchecked face may satisfy this with a box-shadow.
  */
 export async function expectSegmentFocusRing(
   radio: Locator,
@@ -375,6 +380,7 @@ export async function expectSegmentFocusRing(
       boxShadow: style.boxShadow,
       boxShadowVisible: style.boxShadow !== "none"
         && !transparentColors.has(style.boxShadow),
+      checked: (element as HTMLInputElement).checked,
       faceHeight: bounds.height,
       faceWidth: bounds.width,
       outline: style.outline,
@@ -390,7 +396,9 @@ export async function expectSegmentFocusRing(
   expect(focus.faceWidth, `${targetName} face has width`).toBeGreaterThan(0);
   expect(focus.faceHeight, `${targetName} face has height`).toBeGreaterThan(0);
   expect(
-    focus.outlineVisible || focus.boxShadowVisible,
+    focus.checked
+      ? focus.outlineVisible
+      : focus.outlineVisible || focus.boxShadowVisible,
     `${targetName} paints an opaque focus ring on its visible face: ${JSON.stringify(focus)}`,
   ).toBe(true);
 }

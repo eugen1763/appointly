@@ -48,4 +48,14 @@ describe("reset-e2e-db", () => {
       expect(existsSync(path.join(temporaryDirectory, name)), name).toBe(true);
     }
   });
+
+  it("clears the build directory so no stale Turbopack lock survives", () => {
+    const developmentCache = path.join(testDirectory, ".next", "dev");
+    mkdirSync(developmentCache, { recursive: true });
+    writeFileSync(path.join(developmentCache, "lock"), "stale");
+
+    runReset();
+
+    expect(existsSync(path.join(testDirectory, ".next"))).toBe(false);
+  });
 });
