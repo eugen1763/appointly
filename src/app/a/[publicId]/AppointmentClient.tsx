@@ -147,8 +147,10 @@ interface OptionDeletion {
   readonly dialog: ReactNode;
 }
 
-const INVALID_DELETE_RESPONSE = "The server returned an invalid deletion response. Try again.";
-const GENERIC_DELETE_ERROR = "Could not delete the option. Try again.";
+const INVALID_DELETE_RESPONSE =
+  "The option may not have been deleted — the reply could not be read. Reload the page to check.";
+const GENERIC_DELETE_ERROR =
+  "The option was not deleted. Check your connection and try again.";
 
 /**
  * The two-phase deletion, unchanged: the same request bodies, the same
@@ -360,8 +362,9 @@ interface Finalization {
 }
 
 const INVALID_FINALIZE_RESPONSE =
-  "The server returned an invalid finalization response. Try again.";
-const GENERIC_FINALIZE_ERROR = "Could not finalize the appointment. Try again.";
+  "Finalizing may not have completed — the reply could not be read. Reload the page to check.";
+const GENERIC_FINALIZE_ERROR =
+  "The appointment was not finalized. Check your connection and try again.";
 
 /** The row identifies the option, so the old radio-group selection state is gone. */
 function useFinalization({ publicId, onFinalized }: FinalizationOptions): Finalization {
@@ -426,8 +429,9 @@ interface ReopenAppointmentControlsProps {
 }
 
 const INVALID_REOPEN_RESPONSE =
-  "The server returned an invalid reopen response. Try again.";
-const GENERIC_REOPEN_ERROR = "Could not reopen the appointment. Try again.";
+  "Reopening may not have completed — the reply could not be read. Reload the page to check.";
+const GENERIC_REOPEN_ERROR =
+  "The appointment was not reopened. Check your connection and try again.";
 
 function ReopenAppointmentControls({
   publicId,
@@ -508,7 +512,7 @@ interface DeleteAppointmentControlsProps {
 }
 
 const GENERIC_APPOINTMENT_DELETE_ERROR =
-  "Could not delete the appointment. Try again.";
+  "The appointment was not deleted. Check your connection and try again.";
 
 function DeleteAppointmentControls({
   publicId,
@@ -740,7 +744,9 @@ export function AppointmentClient({ initialSnapshot }: AppointmentClientProps) {
       if (!response.ok) throw new Error(responseErrorMessage(body));
       const parsed = appointmentSnapshotSchema.safeParse(body);
       if (!parsed.success) {
-        throw new Error("The server returned an invalid appointment snapshot.");
+        throw new Error(
+          "The refreshed board could not be read. Reload the page to see the current state.",
+        );
       }
       if (requestSequence.current !== sequence) return false;
       const actorChanged = activeParticipantIdRef.current
@@ -775,7 +781,7 @@ export function AppointmentClient({ initialSnapshot }: AppointmentClientProps) {
       if (requestSequence.current !== sequence) return false;
       setSnapshotRefreshError(error instanceof Error
         ? error.message
-        : "Could not refresh the appointment.");
+        : "The board could not be refreshed. Check your connection, then select Refresh.");
       return false;
     }
   }, [publicId]);

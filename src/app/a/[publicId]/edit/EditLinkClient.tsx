@@ -115,7 +115,8 @@ export function EditLinkClient({ publicId }: EditLinkClientProps) {
           ) : (
             <>
               <p className={styles.message} role="alert">
-                This private edit link could not be opened.
+                This private edit link no longer works. Use the newest link you
+                were sent, or ask the organizer to reset your link.
               </p>
               <Link className={styles.returnLink} href={`/a/${publicId}`}>
                 Return to appointment

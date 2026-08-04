@@ -59,12 +59,12 @@ export function JoinParticipantForm({ publicId, onJoined }: JoinParticipantFormP
           && "error" in body
           ? (body as ErrorBody).error?.message
           : undefined;
-        setError(message ?? "Could not join the appointment. Try again.");
+        setError(message ?? "Joining did not complete. Check your connection and try again.");
         return;
       }
       const parsed = joinParticipantSuccessSchema.safeParse(body);
       if (!parsed.success) {
-        setError("Could not join the appointment. Try again.");
+        setError("Joining did not complete. Check your connection and try again.");
         return;
       }
       if ("editUrl" in parsed.data) {
@@ -75,7 +75,7 @@ export function JoinParticipantForm({ publicId, onJoined }: JoinParticipantFormP
       }
       onJoined?.(parsed.data.participantId);
     } catch {
-      setError("Could not join the appointment. Try again.");
+      setError("Joining did not complete. Check your connection and try again.");
     } finally {
       setSubmitting(false);
     }

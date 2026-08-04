@@ -563,7 +563,7 @@ describe("ManageAppointmentPanel guest links", () => {
     await armAndConfirm();
 
     expect(averyRow().querySelector('[role="alert"]')?.textContent)
-      .toBe("Could not reset the private link. Try again.");
+      .toBe("The link could not be reset. Check your connection and try again.");
   });
 
   it("copies the link and reports both clipboard outcomes", async () => {

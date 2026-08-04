@@ -38,7 +38,9 @@ export function SignOutButton({
         {isSigningOut ? "Signing out…" : "Sign out"}
       </button>
       {failed ? (
-        <span className={styles.navError} role="alert">Sign-out failed. Try again.</span>
+        <span className={styles.navError} role="alert">
+          Sign-out did not complete. Check your connection and try again.
+        </span>
       ) : null}
     </>
   );

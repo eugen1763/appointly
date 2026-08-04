@@ -153,7 +153,7 @@ describe("JoinParticipantForm", () => {
 
     expect(container.querySelector("form")).not.toBeNull();
     expect(container.querySelector('[role="alert"]')?.textContent)
-      .toBe("Could not join the appointment. Try again.");
+      .toBe("Joining did not complete. Check your connection and try again.");
     expect(container.textContent).not.toContain("You joined as a co-organizer");
     expect(container.textContent).not.toContain("This private link appears once");
   });

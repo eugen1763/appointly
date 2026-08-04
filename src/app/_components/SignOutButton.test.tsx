@@ -85,7 +85,7 @@ describe("SignOutButton", () => {
     await click(button);
 
     expect(container.querySelector('[role="alert"]')?.textContent).toBe(
-      "Sign-out failed. Try again.",
+      "Sign-out did not complete. Check your connection and try again.",
     );
     expect(button.disabled).toBe(false);
     expect(button.textContent).toBe("Sign out");
@@ -107,7 +107,7 @@ describe("SignOutButton", () => {
     await click(button);
 
     expect(container.querySelector('[role="alert"]')?.textContent).toBe(
-      "Sign-out failed. Try again.",
+      "Sign-out did not complete. Check your connection and try again.",
     );
     expect(button.disabled).toBe(false);
     expect(button.textContent).toBe("Sign out");

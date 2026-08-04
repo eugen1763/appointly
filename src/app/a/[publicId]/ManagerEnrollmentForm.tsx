@@ -11,7 +11,8 @@ import { DISPLAY_NAME_MAX_LENGTH } from "../../../features/appointments/validati
 import { routeErrorMessage } from "./appointment-patch";
 import styles from "./appointment.module.css";
 
-const GENERIC_ENROLLMENT_ERROR = "Could not join the appointment. Try again.";
+const GENERIC_ENROLLMENT_ERROR =
+  "Joining did not complete. Check your connection and try again.";
 
 type EnrollmentError = AppointmentSnapshot["viewer"]["participantEnrollmentError"];
 

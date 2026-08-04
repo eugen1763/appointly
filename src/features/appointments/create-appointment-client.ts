@@ -28,7 +28,7 @@ export class CreateAppointmentRequestError extends Error {
 
 const unexpectedResponse = () => new CreateAppointmentRequestError(
   "UNEXPECTED_RESPONSE",
-  "Appointment creation returned an unexpected response.",
+  "The appointment may have been created, but the reply could not be read. Check your dashboard before trying again.",
 );
 
 async function readJson(response: Response): Promise<unknown> {

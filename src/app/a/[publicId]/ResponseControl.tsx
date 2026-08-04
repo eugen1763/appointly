@@ -19,8 +19,10 @@ interface FailedResponse {
   readonly message: string;
 }
 
-const GENERIC_RESPONSE_ERROR = "Could not save the response. Try again.";
-const INVALID_RESPONSE = "The server returned an invalid response. Try again.";
+const GENERIC_RESPONSE_ERROR =
+  "Your answer was not saved. Check your connection, then use Retry.";
+const INVALID_RESPONSE =
+  "Your answer may not have been saved — the reply could not be read. Reload the page to check.";
 
 export function responseErrorMessage(body: unknown): string {
   if (

@@ -18,8 +18,10 @@ import { routeErrorMessage } from "./appointment-patch";
 import styles from "./appointment.module.css";
 import { formatCalendarDate } from "./calendar-date";
 
-const INVALID_SUCCESS_MESSAGE = "The server returned an invalid suggestion response. Try again.";
-const GENERIC_ERROR_MESSAGE = "Could not add the suggestion. Try again.";
+const INVALID_SUCCESS_MESSAGE =
+  "The option may not have been added — the reply could not be read. Reload the page to check.";
+const GENERIC_ERROR_MESSAGE =
+  "The option was not added. Check your connection and try again.";
 
 export interface InlineOptionAddProps {
   readonly publicId: string;

@@ -242,7 +242,7 @@ describe("AppointmentTitleEditor", () => {
     await type("Broken");
     await pressEnter();
 
-    expect(alertText()).toBe("Could not save the change. Try again.");
+    expect(alertText()).toBe("The change was not saved. Check your connection and try again.");
   });
 
   it("blocks a second submit while the first is in flight", async () => {

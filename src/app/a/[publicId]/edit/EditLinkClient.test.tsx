@@ -127,7 +127,7 @@ describe("EditLinkClient", () => {
     expect(window.location.hash).toBe("");
     expect(fetchMock).not.toHaveBeenCalled();
     expect(container.querySelector('[role="alert"]')?.textContent)
-      .toBe("This private edit link could not be opened.");
+      .toBe("This private edit link no longer works. Use the newest link you were sent, or ask the organizer to reset your link.");
     expect(container.querySelector(`a[href="/a/${PUBLIC_ID}"]`)?.textContent)
       .toContain("Return to appointment");
     expect(container.textContent).not.toContain(EDIT_TOKEN);
@@ -159,7 +159,7 @@ describe("EditLinkClient", () => {
     expect(window.localStorage.getItem(activeParticipantStorageKey(PUBLIC_ID))).toBeNull();
     expect(replace).not.toHaveBeenCalled();
     expect(container.querySelector('[role="alert"]')?.textContent)
-      .toBe("This private edit link could not be opened.");
+      .toBe("This private edit link no longer works. Use the newest link you were sent, or ask the organizer to reset your link.");
     expect(container.textContent).not.toContain("server detail");
     expect(container.textContent).not.toContain(EDIT_TOKEN);
     expect(consoleLog).not.toHaveBeenCalled();

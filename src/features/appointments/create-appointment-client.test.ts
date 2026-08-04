@@ -51,7 +51,7 @@ describe("submitCreateAppointment", () => {
 
     await expect(submitCreateAppointment(input, fetchImpl)).rejects.toMatchObject({
       name: "CreateAppointmentRequestError",
-      message: "Appointment creation returned an unexpected response.",
+      message: "The appointment may have been created, but the reply could not be read. Check your dashboard before trying again.",
     });
   });
 
@@ -89,7 +89,7 @@ describe("submitCreateAppointment", () => {
 
     await expect(submitCreateAppointment(input, fetchImpl)).rejects.toMatchObject({
       name: "CreateAppointmentRequestError",
-      message: "Appointment creation returned an unexpected response.",
+      message: "The appointment may have been created, but the reply could not be read. Check your dashboard before trying again.",
     });
   });
 
@@ -103,7 +103,7 @@ describe("submitCreateAppointment", () => {
 
     await expect(submitCreateAppointment(input, fetchImpl)).rejects.toMatchObject({
       name: "CreateAppointmentRequestError",
-      message: "Appointment creation returned an unexpected response.",
+      message: "The appointment may have been created, but the reply could not be read. Check your dashboard before trying again.",
     });
   });
 });

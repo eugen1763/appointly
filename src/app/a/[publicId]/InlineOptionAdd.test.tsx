@@ -351,7 +351,7 @@ describe("InlineOptionAdd", () => {
 
     await clickDay("2030-04-17");
 
-    expect(alertText()).toBe("The server returned an invalid suggestion response. Try again.");
+    expect(alertText()).toBe("The option may not have been added — the reply could not be read. Reload the page to check.");
     expect(onAdded).not.toHaveBeenCalled();
   });
 

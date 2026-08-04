@@ -209,7 +209,7 @@ describe("ResponseControl", () => {
 
     expect(onSaved).not.toHaveBeenCalled();
     expect(container.querySelector('[role="alert"]')?.textContent)
-      .toContain("The server returned an invalid response. Try again.");
+      .toContain("Your answer may not have been saved — the reply could not be read. Reload the page to check.");
     expect(radio("YES").checked).toBe(true);
   });
 

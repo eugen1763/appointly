@@ -44,15 +44,19 @@ export interface ManageAppointmentPanelProps {
 
 const INVALID_LIMIT_MESSAGE =
   `Option limit must be an integer from ${OPTION_LIMIT_MIN} to ${OPTION_LIMIT_MAX}.`;
-const MANAGER_LIST_ERROR = "Could not load the co-organizers. Try again.";
-const MANAGER_ADD_ERROR = "Could not add the co-organizer. Try again.";
-const MANAGER_REMOVE_ERROR = "Could not remove the co-organizer. Try again.";
+const MANAGER_LIST_ERROR =
+  "The co-organizer list did not load. Check your connection, then use Retry.";
+const MANAGER_ADD_ERROR =
+  "The co-organizer was not added. Check your connection and try again.";
+const MANAGER_REMOVE_ERROR =
+  "The co-organizer was not removed. Check your connection and try again.";
 
 const MANAGER_STATUS_LABELS: Record<Manager["status"], string> = {
   PENDING: "Pending",
   BOUND: "Bound",
 };
-const RESET_LINK_ERROR = "Could not reset the private link. Try again.";
+const RESET_LINK_ERROR =
+  "The link could not be reset. Check your connection and try again.";
 const COPY_SUCCESS = "Private link copied.";
 const COPY_FAILURE =
   "Copy failed. Open the private edit link and copy it from the address bar.";

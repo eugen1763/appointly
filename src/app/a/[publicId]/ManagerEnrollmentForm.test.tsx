@@ -125,7 +125,7 @@ describe("ManagerEnrollmentForm", () => {
     await renderForm();
     await submitName("Casey the Second");
 
-    expect(alertText()).toBe("Could not join the appointment. Try again.");
+    expect(alertText()).toBe("Joining did not complete. Check your connection and try again.");
   });
 
   it("states the participant limit instead of offering a form", async () => {

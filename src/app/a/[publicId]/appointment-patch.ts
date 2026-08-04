@@ -4,8 +4,10 @@ import {
   type UpdateAppointmentRequest,
 } from "../../../features/appointments/contracts";
 
-const GENERIC_PATCH_ERROR = "Could not save the change. Try again.";
-const INVALID_PATCH_RESPONSE = "The server returned an invalid save response. Try again.";
+const GENERIC_PATCH_ERROR =
+  "The change was not saved. Check your connection and try again.";
+const INVALID_PATCH_RESPONSE =
+  "The change may not have been saved — the reply could not be read. Reload the page to check.";
 
 /**
  * Reads whatever the route actually sent back: a field error first, because it
