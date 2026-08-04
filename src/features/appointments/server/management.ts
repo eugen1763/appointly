@@ -1,4 +1,4 @@
-import { and, asc, count, desc, eq, isNull, or, sql } from "drizzle-orm";
+import { and, asc, count, desc, eq, inArray, isNull, or, sql } from "drizzle-orm";
 
 import { user } from "../../../db/auth-schema";
 import {
@@ -6,10 +6,16 @@ import {
   appointmentOptions,
   appointments,
   participants,
+  responses,
 } from "../../../db/schema";
 import { normalizeEmail } from "../../../lib/email";
-import type { FinalizeRequest, UpdateAppointmentRequest } from "../contracts";
+import type {
+  FinalizeRequest,
+  OptionValue,
+  UpdateAppointmentRequest,
+} from "../contracts";
 import { AppError } from "../http-errors";
+import { leadingOptionIds } from "../leading-option";
 import {
   appointmentDetailFieldErrors,
   COORGANIZER_MAX_COUNT,
@@ -23,6 +29,7 @@ import {
   assertCanUpdateAppointmentDetails,
 } from "./authorization";
 import type { ServiceContext, TransactionContext } from "./service-context";
+import { projectOption, type PublicOptionRow } from "./snapshot";
 import { publishAppointmentRevision, runImmediate } from "./transactions";
 
 interface BoundManagerInput {
@@ -139,6 +146,13 @@ export interface ListDashboardAppointmentsInput {
   readonly userId: string;
 }
 
+export interface DashboardLeadingOption {
+  readonly option: OptionValue & { readonly id: string };
+  readonly yesCount: number;
+  readonly noCount: number;
+  readonly tied: boolean;
+}
+
 export interface DashboardAppointment {
   readonly publicId: string;
   readonly title: string;
@@ -146,6 +160,9 @@ export interface DashboardAppointment {
   readonly status: "ACTIVE" | "FINALIZED";
   readonly updatedAt: number;
   readonly role: "OWNER" | "COORGANIZER";
+  readonly optionCount: number;
+  readonly participantCount: number;
+  readonly leadingOption: DashboardLeadingOption | null;
 }
 
 export interface ListDashboardAppointmentsResult {
@@ -960,11 +977,135 @@ export function bindPendingManagersForDashboard(
   return { boundAppointments };
 }
 
+interface DashboardTally {
+  readonly optionCount: number;
+  readonly participantCount: number;
+  readonly leadingOption: DashboardLeadingOption | null;
+}
+
+const EMPTY_TALLY: DashboardTally = {
+  optionCount: 0,
+  participantCount: 0,
+  leadingOption: null,
+};
+
+interface DashboardTallyInput {
+  readonly id: string;
+  readonly type: DashboardAppointment["type"];
+  readonly status: DashboardAppointment["status"];
+}
+
+/**
+ * The card shows a label, never a roster, so the per-participant responses the
+ * snapshot projection carries are dropped rather than shipped to every card.
+ */
+function leadingOptionValue(
+  type: DashboardAppointment["type"],
+  row: PublicOptionRow,
+): DashboardLeadingOption["option"] {
+  const { responses: _unusedResponses, ...value } = projectOption(type, row, []);
+  return value;
+}
+
+/**
+ * Three bounded queries for the whole page rather than three per card: the
+ * dashboard has no pagination, so a per-appointment tally would grow the request
+ * with the organizer's history.
+ */
+function dashboardTallies(
+  context: ServiceContext,
+  rows: readonly DashboardTallyInput[],
+): ReadonlyMap<string, DashboardTally> {
+  const tallies = new Map<string, DashboardTally>();
+  if (rows.length === 0) return tallies;
+  const ids = rows.map(({ id }) => id);
+
+  const optionRows = context.db.select({
+    appointmentId: appointmentOptions.appointmentId,
+    id: appointmentOptions.id,
+    startDate: appointmentOptions.startDate,
+    endDate: appointmentOptions.endDate,
+    startAt: appointmentOptions.startAt,
+    endAt: appointmentOptions.endAt,
+  }).from(appointmentOptions)
+    .where(inArray(appointmentOptions.appointmentId, ids))
+    // The storage index order, which is also the order the snapshot reads options in.
+    .orderBy(
+      asc(appointmentOptions.appointmentId),
+      asc(appointmentOptions.startDate),
+      asc(appointmentOptions.startAt),
+      asc(appointmentOptions.createdAt),
+      asc(appointmentOptions.id),
+    )
+    .all();
+
+  const tallyRows = context.db.select({
+    appointmentId: responses.appointmentId,
+    optionId: responses.optionId,
+    yesCount: sql<number>`sum(case when ${responses.value} = 'YES' then 1 else 0 end)`,
+    totalCount: count(),
+  }).from(responses)
+    .where(inArray(responses.appointmentId, ids))
+    .groupBy(responses.appointmentId, responses.optionId)
+    .all();
+
+  const participantRows = context.db.select({
+    appointmentId: participants.appointmentId,
+    participantCount: count(participants.id),
+  }).from(participants)
+    .where(inArray(participants.appointmentId, ids))
+    .groupBy(participants.appointmentId)
+    .all();
+
+  const optionsByAppointment = new Map<string, typeof optionRows>();
+  for (const option of optionRows) {
+    const collected = optionsByAppointment.get(option.appointmentId) ?? [];
+    collected.push(option);
+    optionsByAppointment.set(option.appointmentId, collected);
+  }
+  const countsByOption = new Map(tallyRows.map((row) => [row.optionId, {
+    yesCount: Number(row.yesCount),
+    totalCount: Number(row.totalCount),
+  }] as const));
+  const participantCounts = new Map(participantRows.map((row) => (
+    [row.appointmentId, Number(row.participantCount)] as const
+  )));
+
+  for (const row of rows) {
+    const options = optionsByAppointment.get(row.id) ?? [];
+    const yesCounts = options.map((option) => ({
+      id: option.id,
+      yesCount: countsByOption.get(option.id)?.yesCount ?? 0,
+    }));
+    const leadingIds = row.status === "FINALIZED"
+      ? new Set<string>()
+      : leadingOptionIds(yesCounts);
+    const leader = options.find((option) => leadingIds.has(option.id)) ?? null;
+    const leaderCounts = leader
+      ? countsByOption.get(leader.id) ?? { yesCount: 0, totalCount: 0 }
+      : null;
+    tallies.set(row.id, {
+      optionCount: options.length,
+      participantCount: participantCounts.get(row.id) ?? 0,
+      leadingOption: leader && leaderCounts
+        ? {
+          option: leadingOptionValue(row.type, leader),
+          yesCount: leaderCounts.yesCount,
+          noCount: leaderCounts.totalCount - leaderCounts.yesCount,
+          tied: leadingIds.size > 1,
+        }
+        : null,
+    });
+  }
+  return tallies;
+}
+
 export function listDashboardAppointments(
   context: ServiceContext,
   input: ListDashboardAppointmentsInput,
 ): ListDashboardAppointmentsResult {
   const rows = context.db.select({
+    id: appointments.id,
     publicId: appointments.publicId,
     title: appointments.title,
     type: appointments.type,
@@ -986,17 +1127,22 @@ export function listDashboardAppointments(
     .orderBy(desc(appointments.updatedAt), asc(appointments.publicId))
     .all();
 
-  const uniqueAppointments = new Map<string, DashboardAppointment>();
+  const uniqueRows = new Map<string, (typeof rows)[number]>();
   for (const row of rows) {
-    if (uniqueAppointments.has(row.publicId)) continue;
-    uniqueAppointments.set(row.publicId, {
+    if (uniqueRows.has(row.publicId)) continue;
+    uniqueRows.set(row.publicId, row);
+  }
+
+  const tallies = dashboardTallies(context, [...uniqueRows.values()]);
+  return {
+    appointments: [...uniqueRows.values()].map((row) => ({
       publicId: row.publicId,
       title: row.title,
       type: row.type,
       status: row.status,
       updatedAt: row.updatedAt,
       role: row.ownerUserId === input.userId ? "OWNER" : "COORGANIZER",
-    });
-  }
-  return { appointments: [...uniqueAppointments.values()] };
+      ...(tallies.get(row.id) ?? EMPTY_TALLY),
+    })),
+  };
 }

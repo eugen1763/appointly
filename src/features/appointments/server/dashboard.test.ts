@@ -4,8 +4,12 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { appointmentManagers, appointments } from "../../../db/schema";
 import {
   createEnrollmentTestDatabase,
+  finalizeAppointment,
   insertAppointment,
   insertManager,
+  insertOption,
+  insertParticipant,
+  insertResponse,
   insertUser,
   MANAGER_USER_ID,
   OWNER_USER_ID,
@@ -66,6 +70,9 @@ describe("listDashboardAppointments", () => {
       status: "ACTIVE",
       updatedAt: TEST_NOW,
       role: "COORGANIZER",
+      optionCount: 0,
+      participantCount: 0,
+      leadingOption: null,
     }]);
     expect(database.connection.db.select({ userId: appointmentManagers.userId })
       .from(appointmentManagers)
@@ -107,6 +114,9 @@ describe("listDashboardAppointments", () => {
         status: "ACTIVE",
         updatedAt: TEST_NOW + 1,
         role: "COORGANIZER",
+        optionCount: 0,
+        participantCount: 0,
+        leadingOption: null,
       },
       {
         publicId: PUBLIC_ID,
@@ -115,9 +125,15 @@ describe("listDashboardAppointments", () => {
         status: "ACTIVE",
         updatedAt: TEST_NOW,
         role: "OWNER",
+        optionCount: 0,
+        participantCount: 0,
+        leadingOption: null,
       },
     ]);
     expect(Object.keys(result.appointments[0] ?? {}).sort()).toEqual([
+      "leadingOption",
+      "optionCount",
+      "participantCount",
       "publicId",
       "role",
       "status",
@@ -201,6 +217,180 @@ describe("listDashboardAppointments", () => {
       THIRD_PUBLIC_ID,
       FOURTH_PUBLIC_ID,
       SECOND_PUBLIC_ID,
+    ]);
+  });
+});
+
+describe("listDashboardAppointments tallies", () => {
+  function ownedAppointment(userId: string) {
+    return listDashboardAppointments(database.context, { userId }).appointments[0];
+  }
+
+  it("reports the leading option with its yes and no counts", () => {
+    const ana = insertParticipant(database, appointmentId, "Ana");
+    const bo = insertParticipant(database, appointmentId, "Bo");
+    const cy = insertParticipant(database, appointmentId, "Cy");
+    const first = insertOption(database, appointmentId, ana, {
+      kind: "DATE",
+      startDate: "2030-02-01",
+    });
+    const second = insertOption(database, appointmentId, ana, {
+      kind: "DATE",
+      startDate: "2030-02-02",
+    });
+    insertResponse(database, appointmentId, ana, first, "YES");
+    insertResponse(database, appointmentId, bo, first, "YES");
+    insertResponse(database, appointmentId, cy, first, "NO");
+    insertResponse(database, appointmentId, ana, second, "YES");
+
+    const appointment = ownedAppointment(OWNER_USER_ID);
+
+    expect(appointment).toMatchObject({ optionCount: 2, participantCount: 3 });
+    // Exact, so the leading payload never quietly grows a key the card ignores.
+    expect(appointment?.leadingOption).toEqual({
+      option: { id: first, kind: "DATE", startDate: "2030-02-01" },
+      yesCount: 2,
+      noCount: 1,
+      tied: false,
+    });
+    expect(appointment?.leadingOption?.option.id).not.toBe(second);
+  });
+
+  it("reports no leader while every option is still level", () => {
+    const ana = insertParticipant(database, appointmentId, "Ana");
+    const first = insertOption(database, appointmentId, ana, {
+      kind: "DATE",
+      startDate: "2030-02-01",
+    });
+    const second = insertOption(database, appointmentId, ana, {
+      kind: "DATE",
+      startDate: "2030-02-02",
+    });
+    insertResponse(database, appointmentId, ana, first, "YES");
+    insertResponse(database, appointmentId, ana, second, "YES");
+
+    expect(ownedAppointment(OWNER_USER_ID)).toMatchObject({
+      optionCount: 2,
+      participantCount: 1,
+      leadingOption: null,
+    });
+  });
+
+  it("marks joint leaders as tied and names the first in canonical order", () => {
+    const ana = insertParticipant(database, appointmentId, "Ana");
+    const bo = insertParticipant(database, appointmentId, "Bo");
+    const first = insertOption(database, appointmentId, ana, {
+      kind: "DATE",
+      startDate: "2030-02-01",
+    });
+    const second = insertOption(database, appointmentId, ana, {
+      kind: "DATE",
+      startDate: "2030-02-02",
+    });
+    const third = insertOption(database, appointmentId, ana, {
+      kind: "DATE",
+      startDate: "2030-02-03",
+    });
+    for (const optionId of [first, second]) {
+      insertResponse(database, appointmentId, ana, optionId, "YES");
+      insertResponse(database, appointmentId, bo, optionId, "YES");
+    }
+    insertResponse(database, appointmentId, ana, third, "YES");
+
+    expect(ownedAppointment(OWNER_USER_ID)).toMatchObject({
+      optionCount: 3,
+      participantCount: 2,
+      leadingOption: {
+        option: { id: first, kind: "DATE", startDate: "2030-02-01" },
+        yesCount: 2,
+        noCount: 0,
+        tied: true,
+      },
+    });
+  });
+
+  it("suppresses the leader once the appointment is finalized", () => {
+    const ana = insertParticipant(database, appointmentId, "Ana");
+    const first = insertOption(database, appointmentId, ana, {
+      kind: "DATE",
+      startDate: "2030-02-01",
+    });
+    insertOption(database, appointmentId, ana, {
+      kind: "DATE",
+      startDate: "2030-02-02",
+    });
+    insertResponse(database, appointmentId, ana, first, "YES");
+    finalizeAppointment(database, appointmentId, ana);
+
+    expect(ownedAppointment(OWNER_USER_ID)).toMatchObject({
+      status: "FINALIZED",
+      optionCount: 3,
+      participantCount: 1,
+      leadingOption: null,
+    });
+  });
+
+  it("reports zeroes for an appointment with no options or participants", () => {
+    expect(ownedAppointment(OWNER_USER_ID)).toMatchObject({
+      optionCount: 0,
+      participantCount: 0,
+      leadingOption: null,
+    });
+  });
+
+  it("keeps each appointment's counts to itself", () => {
+    const ana = insertParticipant(database, appointmentId, "Ana");
+    const own = insertOption(database, appointmentId, ana, {
+      kind: "DATE",
+      startDate: "2030-02-01",
+    });
+    insertResponse(database, appointmentId, ana, own, "YES");
+
+    const otherAppointmentId = insertAppointment(
+      database,
+      OWNER_USER_ID,
+      SECOND_PUBLIC_ID,
+    );
+    const bo = insertParticipant(database, otherAppointmentId, "Bo");
+    const cy = insertParticipant(database, otherAppointmentId, "Cy");
+    const otherFirst = insertOption(database, otherAppointmentId, bo, {
+      kind: "DATE",
+      startDate: "2030-03-01",
+    });
+    const otherSecond = insertOption(database, otherAppointmentId, bo, {
+      kind: "DATE",
+      startDate: "2030-03-02",
+    });
+    insertResponse(database, otherAppointmentId, bo, otherFirst, "NO");
+    insertResponse(database, otherAppointmentId, cy, otherFirst, "NO");
+    insertResponse(database, otherAppointmentId, bo, otherSecond, "YES");
+    database.connection.db.update(appointments)
+      .set({ updatedAt: TEST_NOW + 5 })
+      .where(eq(appointments.id, otherAppointmentId))
+      .run();
+
+    const result = listDashboardAppointments(database.context, {
+      userId: OWNER_USER_ID,
+    });
+
+    expect(result.appointments).toMatchObject([
+      {
+        publicId: SECOND_PUBLIC_ID,
+        optionCount: 2,
+        participantCount: 2,
+        leadingOption: {
+          option: { id: otherSecond, kind: "DATE", startDate: "2030-03-02" },
+          yesCount: 1,
+          noCount: 0,
+          tied: false,
+        },
+      },
+      {
+        publicId: PUBLIC_ID,
+        optionCount: 1,
+        participantCount: 1,
+        leadingOption: null,
+      },
     ]);
   });
 });

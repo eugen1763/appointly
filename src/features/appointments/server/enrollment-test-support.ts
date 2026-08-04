@@ -11,7 +11,9 @@ import {
   appointmentOptions,
   appointments,
   participants,
+  responses,
 } from "../../../db/schema";
+import type { OptionValue } from "../contracts";
 import type { EventPublisher, ServiceContext } from "./service-context";
 
 export const TEST_NOW = 1_800_000_000_000;
@@ -129,6 +131,85 @@ export function insertParticipant(
   }).returning({ id: participants.id }).all();
   if (!participant) throw new Error("Fixture participant was not inserted");
   return participant.id;
+}
+
+interface OptionColumns {
+  readonly startDate: string | null;
+  readonly endDate: string | null;
+  readonly startAt: number | null;
+  readonly endAt: number | null;
+  readonly canonicalKey: string;
+}
+
+/** Mirrors the canonical keys and column shapes written by `option-storage.ts`. */
+function optionColumns(value: OptionValue): OptionColumns {
+  switch (value.kind) {
+    case "DATE":
+      return {
+        startDate: value.startDate,
+        endDate: null,
+        startAt: null,
+        endAt: null,
+        canonicalKey: `D:${value.startDate}`,
+      };
+    case "DATE_TIME":
+      return {
+        startDate: null,
+        endDate: null,
+        startAt: value.startAt,
+        endAt: null,
+        canonicalKey: `T:${value.startAt}`,
+      };
+    case "DATE_RANGE":
+      return {
+        startDate: value.startDate,
+        endDate: value.endDate,
+        startAt: null,
+        endAt: null,
+        canonicalKey: `DR:${value.startDate}/${value.endDate}`,
+      };
+    case "DATE_TIME_RANGE":
+      return {
+        startDate: null,
+        endDate: null,
+        startAt: value.startAt,
+        endAt: value.endAt,
+        canonicalKey: `TR:${value.startAt}/${value.endAt}`,
+      };
+  }
+}
+
+export function insertOption(
+  database: EnrollmentTestDatabase,
+  appointmentId: string,
+  creatorParticipantId: string,
+  value: OptionValue,
+  createdAt = TEST_NOW,
+): string {
+  const [option] = database.connection.db.insert(appointmentOptions).values({
+    appointmentId,
+    creatorParticipantId,
+    ...optionColumns(value),
+    createdAt,
+  }).returning({ id: appointmentOptions.id }).all();
+  if (!option) throw new Error("Fixture option was not inserted");
+  return option.id;
+}
+
+export function insertResponse(
+  database: EnrollmentTestDatabase,
+  appointmentId: string,
+  participantId: string,
+  optionId: string,
+  value: "YES" | "NO",
+): void {
+  database.connection.db.insert(responses).values({
+    appointmentId,
+    participantId,
+    optionId,
+    value,
+    updatedAt: TEST_NOW,
+  }).run();
 }
 
 export function finalizeAppointment(

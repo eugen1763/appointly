@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { OptionLabel } from "../a/[publicId]/PublicAppointmentView";
 import { AppointmentComposer } from "../../features/appointments/AppointmentComposer";
 import { ownerDisplayNameFromIdentity } from "../../features/appointments/creation-owner-default";
 import {
@@ -106,6 +107,14 @@ export default async function DashboardPage() {
                       <dd>{TYPE_LABELS[appointment.type]}</dd>
                     </div>
                     <div>
+                      <dt>Options</dt>
+                      <dd>{appointment.optionCount}</dd>
+                    </div>
+                    <div>
+                      <dt>Participants</dt>
+                      <dd>{appointment.participantCount}</dd>
+                    </div>
+                    <div>
                       <dt>Updated</dt>
                       <dd>
                         <time dateTime={new Date(appointment.updatedAt).toISOString()}>
@@ -114,6 +123,20 @@ export default async function DashboardPage() {
                       </dd>
                     </div>
                   </dl>
+                  {appointment.leadingOption ? (
+                    <p className={styles.leadingLine}>
+                      <span className={styles.leadingEyebrow}>
+                        {appointment.leadingOption.tied ? "Leading (tied)" : "Leading"}
+                      </span>
+                      <OptionLabel
+                        option={{ ...appointment.leadingOption.option, responses: [] }}
+                      />
+                      <span className={styles.leadingCounts}>
+                        {appointment.leadingOption.yesCount} yes ·{" "}
+                        {appointment.leadingOption.noCount} no
+                      </span>
+                    </p>
+                  ) : null}
                   <Link className={styles.navLink} href={`/a/${appointment.publicId}`}>
                     Open public link
                   </Link>

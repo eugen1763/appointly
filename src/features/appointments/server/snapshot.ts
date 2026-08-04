@@ -51,7 +51,7 @@ export interface PublicAppointment {
 
 type AppointmentType = PublicAppointment["appointment"]["type"];
 
-interface PublicOptionRow {
+export interface PublicOptionRow {
   readonly id: string;
   readonly startDate: string | null;
   readonly endDate: string | null;
@@ -66,7 +66,12 @@ function required<Value>(value: Value | null, field: string): Value {
   return value;
 }
 
-function projectOption(
+/**
+ * Exported so the dashboard tally turns stored option rows into option values
+ * through the same code path the snapshot uses, rather than a second projection
+ * that could drift from it.
+ */
+export function projectOption(
   type: AppointmentType,
   row: PublicOptionRow,
   optionResponses: readonly PublicResponse[],
