@@ -813,6 +813,9 @@
     gap: var(--space-2);
     align-items: center;
     padding: var(--space-3);
+    /* Reserved so .leadingRow only recolours this border instead of shifting
+       the row's content 4px right relative to its neighbours. */
+    border-left: var(--space-1) solid transparent;
     border-bottom: var(--rule-width) solid var(--color-border-subtle);
   }
 
@@ -836,7 +839,10 @@
   .board tbody th.optName {
     order: 1;
     display: block;
-    flex: 1 1 auto;
+    /* Basis 100% so the label always owns the first flex line: with basis auto a
+       short label shared its line with .sumCell and a long one did not, so
+       adjacent cards came out with different band orders. */
+    flex: 1 1 100%;
     width: auto;
     min-width: 0;
   }
