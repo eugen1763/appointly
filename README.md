@@ -1,160 +1,230 @@
-# Appointly
+<div align="center">
+  <img src="docs/appointly-banner.svg" alt="Appointly — find the time everyone can make" width="100%" />
 
-Self-hosted group scheduling. Put the possible times on one board, watch the answers land live, and
-lock the winner. Guests answer from a link — no account, no thread.
+  <br />
 
-An organizer creates an appointment carrying a handful of candidate times, either after signing in
-with Google or directly on a trusted internal instance. Everyone else opens one public link, gives
-their name, and marks each option Yes or No. Answers appear for everyone in real time. When a winner
-is clear, the organizer finalizes it.
+  **A self-hosted scheduling board for finding the time everyone can make.**
+
+  Put the options in one place, collect clear answers live, and lock the winner — without making every guest create an account.
+
+  <br />
+
+  [![Next.js](https://img.shields.io/badge/Next.js-16-141a2e?style=flat-square&logo=nextdotjs&logoColor=white)](https://nextjs.org/)
+  [![TypeScript](https://img.shields.io/badge/TypeScript-7-3d2bd5?style=flat-square&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+  [![SQLite](https://img.shields.io/badge/SQLite-WAL-0f7b5f?style=flat-square&logo=sqlite&logoColor=white)](https://www.sqlite.org/)
+  [![Docker](https://img.shields.io/badge/Docker-ready-2496ed?style=flat-square&logo=docker&logoColor=white)](https://www.docker.com/)
+  [![Tests](https://img.shields.io/badge/unit_tests-1160%2B-a99bff?style=flat-square)](#testing)
+
+  [Quick start](#quick-start) · [Features](#features) · [Configuration](#configuration) · [Architecture](#architecture) · [Deployment](#deployment)
+</div>
 
 ---
 
-## Requirements
+## Why Appointly?
 
-- **Node 24.x** (`.nvmrc` pins it)
-- A **Google OAuth client** when Google login is enabled; guests never need an account
-- Nothing else. Storage is a local **SQLite** file.
+Most scheduling tools either require every participant to register or turn into another long message thread. Appointly keeps the organizer workflow accountable while making the guest workflow deliberately small:
+
+1. **Create** an appointment with possible days, times, or ranges.
+2. **Share** one public link.
+3. **Collect** Yes/No answers as they arrive in real time.
+4. **Finalize** the option that works best.
+
+Guests only need a display name. Their private edit link lets them return and change an answer later.
+
+## Features
+
+| | |
+|---|---|
+| **Four scheduling shapes** | Whole days, dates with times, date ranges, and date-time ranges. The composer infers the shape from the options entered. |
+| **Live shared board** | Server-Sent Events notify every open board when answers or appointment details change. |
+| **Account-free guests** | Participants answer from a shared link and receive a private, revocable edit link. |
+| **Organizer controls** | Edit details, add options, finalize or reopen, reset guest links, and manage co-organizers. |
+| **Two access modes** | Google OAuth for normal deployments, or a shared login-free mode for trusted internal networks and development. |
+| **Accessible by design** | Responsive keyboard flows, light and dark schemes, reduced-motion support, axe gates, and platform accessibility-tree tests. |
+| **Self-contained storage** | SQLite on local disk, plain SQL migrations, no external database service required. |
+| **Production-ready image** | Multi-stage Docker build, standalone Next.js runtime, persistent volume, and healthcheck. |
 
 ## Quick start
 
+### Requirements
+
+- [Node.js 24](https://nodejs.org/) — pinned in [`.nvmrc`](.nvmrc)
+- npm
+- A Google OAuth client **only if Google login is enabled**
+
 ```bash
+git clone https://github.com/eugen1763/appointly.git
+cd appointly
 npm ci
-cp .env.example .env      # then fill in the values below
-npm run db:migrate
-npm run dev               # http://localhost:3000
+cp .env.example .env
 ```
 
-### Configuration
-
-Every variable in `.env` is required except Google credentials when login is disabled.
-
-| Variable | What it is |
-|---|---|
-| `APP_URL` | The origin this instance is served from. Used for OAuth callbacks, the public links it hands out, and an exact origin check on every mutating request. |
-| `BETTER_AUTH_SECRET` | Signing secret for organizer sessions. |
-| `GUEST_TOKEN_SECRET` | Signing secret for guest edit links. Rotating it invalidates every outstanding guest link. |
-| `GOOGLE_AUTH_ENABLED` | Set `false` for a shared internal/development instance where anyone can create and manage appointments without signing in. Defaults to `true`. |
-| `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | From your Google OAuth client. Required only when `GOOGLE_AUTH_ENABLED=true`. |
-| `DATABASE_PATH` | Where the SQLite file lives. Defaults to `./data/appointly.sqlite`. |
-| `TRUST_PROXY` | Set `true` only when running behind a reverse proxy that sets `X-Forwarded-*`. Default `false`. |
-
-Generate each secret with:
+Generate the two secrets:
 
 ```bash
 openssl rand -base64 32 | tr '+/' '-_' | tr -d '='
 ```
 
-The Google OAuth callback is `${APP_URL}/api/auth/callback/google`.
+Put a different generated value in `BETTER_AUTH_SECRET` and `GUEST_TOKEN_SECRET`, then choose an access mode.
 
-With `GOOGLE_AUTH_ENABLED=false`, every visitor uses one shared internal organizer identity. This is
-intended only for trusted internal networks and local development: anyone who can reach the instance
-can see the dashboard and manage every appointment owned by that shared identity.
+<details open>
+<summary><strong>Option A — Google login</strong></summary>
 
----
+```dotenv
+APP_URL=http://localhost:3000
+GOOGLE_AUTH_ENABLED=true
+GOOGLE_CLIENT_ID=your-client-id
+GOOGLE_CLIENT_SECRET=your-client-secret
+```
 
-## How it works
+Add this callback URL to the Google OAuth client:
 
-**Appointments have a type, fixed at creation.** An appointment is a set of whole days, days at a
-time, one run of days, or a run with times — and every option in it shares that shape. The composer
-infers the type from what you enter rather than asking up front, and names it back to you in plain
-words so the inference is never silent.
+```text
+http://localhost:3000/api/auth/callback/google
+```
 
-**Anyone with the link can answer.** A guest gives a display name, gets a participant record and a
-private edit link, and can return later to change their answers. The link is shown once; an organizer
-can reissue it if someone loses theirs.
+</details>
 
-**Organizers and co-organizers.** The creator owns the appointment. Co-organizers are invited by email
-and gain manager rights when they first sign in with that address. Owners alone can delete the appointment
-or manage the co-organizer list.
+<details>
+<summary><strong>Option B — trusted internal instance, no login</strong></summary>
 
-**Live updates** ride a Server-Sent Events stream carrying only a revision number; the client
-re-fetches a snapshot when it sees one it hasn't rendered. Responses save optimistically per option
-and roll back if the server disagrees.
+```dotenv
+APP_URL=http://localhost:3000
+GOOGLE_AUTH_ENABLED=false
+GOOGLE_CLIENT_ID=
+GOOGLE_CLIENT_SECRET=
+```
+</details>
 
-**Limits:** 1–100 options per appointment (default 10), 200 participants, 20 co-organizers, 120
-characters of title, 2,000 of description, 80 of display name.
+> [!WARNING]
+> Login-free mode gives every visitor the same internal organizer identity. Anyone who can reach the instance can see its dashboard and manage appointments owned by that identity. Use it only for local development or on a trusted internal network.
 
-### Routes
+Start the app:
 
-| Route | |
+```bash
+npm run db:migrate
+npm run dev
+```
+
+Open [http://localhost:3000](http://localhost:3000).
+
+## Configuration
+
+Every variable is required except Google credentials when login is disabled.
+
+| Variable | Purpose |
 |---|---|
-| `/` | Landing; signing in starts Google OAuth directly |
-| `/dashboard` | Your appointments, with tallies and the leading option, plus the composer |
-| `/appointments/new` | The same composer, full page |
-| `/a/[publicId]` | The board — answering, results, editing, finalizing |
-| `/a/[publicId]/edit#…` | Redeems a guest's private edit link, then redirects to the board |
-| `/api/health` | `{"status":"ok"}` |
+| `APP_URL` | Canonical origin used for OAuth callbacks, public links, and exact-origin checks on mutating requests. |
+| `BETTER_AUTH_SECRET` | Base64url secret of at least 32 bytes used to sign organizer sessions. |
+| `GUEST_TOKEN_SECRET` | Separate base64url secret used for guest edit links. Rotating it invalidates outstanding guest links. |
+| `GOOGLE_AUTH_ENABLED` | `true` by default. Set `false` to use the shared internal organizer without login. |
+| `GOOGLE_CLIENT_ID` | Google OAuth client ID; required when Google login is enabled. |
+| `GOOGLE_CLIENT_SECRET` | Google OAuth client secret; required when Google login is enabled. |
+| `DATABASE_PATH` | Writable SQLite file path. The example uses `./data/appointly.sqlite`. |
+| `TRUST_PROXY` | Set `true` only behind a reverse proxy that supplies trusted `X-Forwarded-*` headers. |
 
----
+The production Google callback is `${APP_URL}/api/auth/callback/google`.
+
+## How scheduling works
+
+### Appointment shapes
+
+An appointment has one shape, fixed at creation. Every option is therefore directly comparable:
+
+- `DATE` — individual calendar days
+- `DATE_TIME` — individual instants
+- `DATE_RANGE` — inclusive runs of calendar days
+- `DATE_TIME_RANGE` — start/end instants
+
+Options are stored as calendar dates or UTC instants depending on their shape. The interface renders timed options in the viewer's time zone.
+
+### Guests and edit links
+
+Anyone with the public appointment link can join with a display name. Appointly returns a private edit link once; the guest can use it later to change answers. An organizer can revoke and reissue that link.
+
+### Organizers and co-organizers
+
+The creator owns the appointment. Co-organizers are invited by email and gain manager rights when they first sign in with that address. Only the owner can delete an appointment or change its co-organizer list.
+
+### Live updates
+
+The Server-Sent Events stream carries only a revision number. A client that sees a newer revision fetches a fresh validated snapshot. Response controls update optimistically and roll back if the server rejects the write.
+
+### Routes and limits
+
+| Route | Purpose |
+|---|---|
+| `/` | Landing page and primary organizer entry point |
+| `/dashboard` | Owned and co-organized appointments, tallies, leaders, and composer |
+| `/appointments/new` | Full-page appointment composer |
+| `/a/[publicId]` | Public board for answering, results, editing, and finalizing |
+| `/a/[publicId]/edit#…` | Redeems a private guest edit token, then returns to the board |
+| `/api/health` | Returns `{"status":"ok"}` |
+
+Limits: **1–100 options** per appointment (default 10), **200 participants**, **20 co-organizers**, 120 title characters, 2,000 description characters, and 80 display-name characters.
 
 ## Architecture
 
-Next.js App Router with React Server Components; client components only where interaction demands it.
-CSS modules over a token system in `src/app/globals.css` — every colour flows through a custom
-property, which is what makes the light and dark themes a single set of value definitions.
+```mermaid
+flowchart LR
+    Browser[Organizer / guest browser]
+    App[Next.js App Router]
+    Contracts[Zod route contracts]
+    Services[Appointment services]
+    Auth[Better Auth]
+    DB[(SQLite · WAL)]
+    Events[Revision event stream]
 
+    Browser -->|HTTP| App
+    App --> Contracts
+    Contracts --> Services
+    App --> Auth
+    Services --> DB
+    Auth --> DB
+    Services --> Events
+    Events -->|SSE| Browser
 ```
+
+The app uses React Server Components by default and client components only where interaction requires them. CSS Modules sit on a shared token system in `src/app/globals.css`, allowing light and dark themes to use the same component rules.
+
+```text
 src/
-  app/                     routes, API handlers, and route-scoped components
-    a/[publicId]/          the appointment board and everything on it
-    api/appointments/      the HTTP surface
-    _components/           shared shell pieces
-  features/appointments/
-    contracts.ts           Zod schemas + the route contract table — one source of truth
-                           for every request, response and error shape
-    server/                services: the only place that touches the database
-  db/                      drizzle schema and connection
-  lib/                     auth, email normalisation, return-path safety
-e2e/                       Playwright specs
-drizzle/                   SQL migrations
+├── app/                         routes, API handlers, route-scoped UI
+│   ├── a/[publicId]/            public appointment board
+│   ├── api/appointments/        HTTP surface
+│   └── _components/             shared shell components
+├── features/appointments/
+│   ├── contracts.ts             request, response, and error schemas
+│   └── server/                  database-backed application services
+├── db/                          Drizzle schema and SQLite connection
+└── lib/                         auth, security, email, return paths
+e2e/                             Playwright specifications
+drizzle/                         plain SQL migrations
 ```
 
-Two conventions are worth knowing before adding code:
+Two boundaries keep the codebase predictable:
 
-- **`contracts.ts` is authoritative.** Routes parse their input and validate their output against it,
-  and the e2e suite parses snapshots with the same schemas. Change the contract, not the handler.
-- **Route handlers are factories.** Each `route.ts` wires a handler built in `route-handler.ts` with
-  its dependencies injected, so the handler can be unit-tested without a server.
+- **`contracts.ts` is authoritative.** Routes and E2E tests validate against the same request, response, actor, and error definitions.
+- **Route handlers are factories.** Production files inject the database, session readers, clocks, and token digesters, while tests invoke handlers without starting a server.
 
-### Storage
+### Storage constraints
 
-SQLite via better-sqlite3, in WAL mode. That means **a single app instance on local disk** — not two
-replicas, and not a network filesystem. Options are stored either as calendar dates or as UTC
-instants depending on the appointment type, with a canonical key enforcing uniqueness within an
-appointment.
-
----
+SQLite runs in WAL mode, so Appointly expects **one application instance on local disk**. Do not run multiple replicas against the same file or place it on a network filesystem.
 
 ## Testing
 
 ```bash
 npm run typecheck
-npm test           # unit — vitest
-npm run test:e2e   # end-to-end — Playwright, spins up its own dev server
+npx vitest run --exclude 'e2e/**'
+npm run test:e2e
 ```
 
-Roughly 1,150 unit tests and 22 end-to-end tests. The e2e suite runs serially against a throwaway
-database (`.tmp/e2e.sqlite`, reset by `pretest:e2e`) with `E2E_AUTH=1`, which enables an
-email/password branch so fixtures can sign in without Google. That branch requires **both**
-`E2E_AUTH=1` and a non-production `NODE_ENV`, so it cannot be switched on in a production build.
+The suite contains **1,160+ unit tests** and **22 end-to-end tests**. Playwright runs serially against a disposable SQLite database. Its fixture-only email/password auth requires both `E2E_AUTH=1` and a non-production `NODE_ENV`, so it cannot be enabled in production.
 
-A single spec, for iteration:
+Accessibility is a gate rather than a manual assumption: axe runs across every route in both color schemes and viewport sizes, and the board suite also inspects Chromium's platform accessibility tree.
 
-```bash
-node scripts/reset-e2e-db.mjs && npx playwright test e2e/boundaries.spec.ts
-```
-
-Accessibility is gated, not assumed: `e2e/route-a11y.spec.ts` runs axe across every surface in both
-colour schemes at desktop and mobile widths, and `e2e/board-a11y.spec.ts` asserts Chrome's **platform**
-accessibility tree — because `getByRole` computes roles from the DOM, and has been observed passing on
-markup a screen reader could no longer navigate.
-
-> **Known quirk:** `npm test` exits non-zero even when every test passes. Vitest also collects the
-> Playwright specs, which it cannot run, producing one file-level error per spec file. Read the test
-> count, not the exit code.
-
----
+> [!NOTE]
+> The package's broad `npm test` command also discovers Playwright files, which Vitest cannot execute. Use the explicit unit command above when you want a clean unit-only run.
 
 ## Deployment
 
@@ -162,27 +232,21 @@ markup a screen reader could no longer navigate.
 docker compose -f compose.yaml -f compose.production.yaml up -d --build
 ```
 
-The image is a multi-stage build producing a Next.js standalone server; only build output reaches the
-runtime stage. The database lives in the `appointly-data` volume, and a healthcheck polls
-`/api/health`.
+The multi-stage image produces a standalone Next.js server. Compose mounts the SQLite database in the `appointly-data` volume and checks `/api/health`.
 
-Two things to know before building:
+> [!IMPORTANT]
+> **Back up SQLite through SQLite.** WAL mode means copying only `appointly.sqlite` can miss committed data still present in the write-ahead log. Use:
+>
+> ```bash
+> sqlite3 /path/to/appointly.sqlite ".backup /path/to/backup.sqlite"
+> ```
 
-- **The build needs network access to `fonts.googleapis.com`.** Archivo and IBM Plex Mono are fetched
-  at build time and self-hosted into the image, so nothing is requested from a third party at runtime —
-  but under Turbopack a font fetch failure is fatal with no retry. For an air-gapped build, vendor the
-  woff2 files under `src/app/fonts/` and switch `src/app/layout.tsx` to `next/font/local` with the same
-  variable names; no other file needs to change.
-- **Back up the database file, not just the volume.** It runs in WAL mode, so copying
-  `appointly.sqlite` alone can capture almost nothing — the data may still be in the write-ahead log.
-  Use `sqlite3 <db> ".backup <target>"`.
+The production build currently needs egress to `fonts.googleapis.com`: `next/font` downloads Archivo and IBM Plex Mono at build time and self-hosts them in the resulting image. For an air-gapped build, vendor the font files and switch `src/app/layout.tsx` to `next/font/local`.
 
-Migrations are plain SQL under `drizzle/`; `npm run db:generate` writes a new one from the schema and
-`npm run db:migrate` applies it.
+Migrations are plain SQL under `drizzle/`. `npm run db:generate` creates a migration from the schema; `npm run db:migrate` applies pending migrations.
 
----
+## Project status
 
-## Notes
+Appointly is usable and thoroughly tested, but still evolving. [`OPEN-POINTS.md`](OPEN-POINTS.md) records known limitations, deliberately deferred work, and implementation traps worth reading before a larger contribution.
 
-`OPEN-POINTS.md` records what is unfinished, what was deliberately left undone and why, and two traps
-worth knowing before doing responsive or accessibility work here.
+If you find a bug or have an idea, [open an issue](https://github.com/eugen1763/appointly/issues).
