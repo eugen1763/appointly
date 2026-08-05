@@ -1,127 +1,148 @@
 # Open points
 
-State at the end of the frontend redesign, 2026-08-04. Everything below is either unfinished,
-deliberately not done, or a thing worth knowing before touching the relevant area.
+Current limitations and maintenance notes for Appointly. This document intentionally avoids
+deployment-specific state: the public repository cannot verify which commit a private installation
+is running, where its backups live, or how its host is configured.
 
-Current gates: typecheck clean, **1152 unit tests**, **22 e2e tests**, all passing.
-Deployed to production twice today; the running image is built from `58b28b2`.
+Last reviewed: **2026-08-05**
 
----
+## Verified baseline
 
-## Unfinished
+The following checks were run against `main` during the last review:
 
-### 1. Phase 6 step 7 — the final gate was never run
+```bash
+npm run typecheck
+npx vitest run --exclude 'e2e/**'
+npx playwright test --list
+```
 
-Steps 1–6 of the polish phase are committed and green, but the closing gate was not executed:
+- TypeScript: clean
+- Unit tests: **1,161 passed across 96 files**
+- Playwright inventory: **22 tests across 16 files**
 
-- the timing-race specs (`board-a11y`, and anything hydration-sensitive) run **three times on each of
-  Chromium, Firefox and WebKit** — a single green run of that class is not evidence, because it fails
-  on a race and so passes and fails against identical code
-- the populated-state screenshot audit at 320 and 1280 in both schemes
+> [!NOTE]
+> Listing the Playwright suite verifies its inventory, not browser execution. Run
+> `npm run test:e2e` against the required browser set before a release.
 
-Nothing suggests a problem — the full suite passes, including the axe gate on all six surfaces — but
-the phase is not formally closed until those run.
+## Pending verification
 
-### 2. Deploy the polish phase
+### Repeat the cross-browser timing gate
 
-Commits `6c22bbb`…`b533b3c` are unreleased. They contain two things that are not cosmetic:
+The accessibility and hydration-sensitive browser checks should be repeated **three times in
+Chromium, Firefox, and WebKit** before treating a release as fully cross-browser verified. These
+checks can expose timing races that a single green run does not rule out.
 
-- **a functional dead end**: a board with zero options never rendered the add control, so an organizer
-  who deleted every option could not add one back (`ebff3db`)
-- **a contrast failure**: `--color-text-faint` was 3.60:1 in light mode, below AA. Now 4.68–5.14:1
-  light and 5.13–6.13:1 dark (`2d3ead7`)
+The current `playwright.config.ts` has no named browser projects, so this matrix is not produced by
+the default command. Configure or invoke the required browser projects explicitly rather than
+assuming that `npm run test:e2e` covered all three engines.
 
----
+### Audit populated screenshots at narrow and wide viewports
 
-## Deliberately not done
+Capture populated states at **320 px** and **1280 px**, in both light and dark color schemes. Empty
+screens are insufficient: the regressions that previously escaped automated checks appeared only
+after the interface contained answers, time chips, or co-organizer rows.
 
-### 3. Two timed options on the same day, or several disjoint ranges, in one creation
+## Product limitations
 
-The composer is day-keyed, so it cannot express "Monday 09:00 or Monday 14:00" in a single creation —
-the old wizard could, because it took each candidate independently. Adding a second mechanism on top
-of the per-day time overrides would cost the primary path its simplicity. The board's inline ＋ adds
-an option in two interactions, which covers it.
+### The composer cannot create two timed options on the same day
 
-The e2e helper throws a descriptive error for these shapes rather than silently producing the wrong
-appointment type, so the limit stays loud.
+The creation UI is keyed by calendar day. It cannot represent “Monday at 09:00 or Monday at 14:00”
+in one creation flow, nor can it create several disjoint ranges at once. The board's inline
+**Add an option** control can add the extra option after creation.
 
-### 4. `GuestIdentitySelector` and `ResponseControl` remain controlled inputs
+The E2E creation helper rejects unsupported shapes rather than silently creating a different
+appointment type.
 
-Both are server-rendered with controlled React values, so a pre-hydration interaction is ignored.
-Unlike the three forms fixed in `04032b7` and `58b28b2`, **neither loses data**: no request is sent and
-React's next render visibly snaps the control back, so the user sees that nothing happened and repeats
-it. Converting them carries real regression risk — `ResponseControl`'s radio semantics are bound by
-nine e2e specs — for no data-safety gain.
+### Two controls ignore interaction before hydration
 
-### 5. The chosen option on finalized dashboard cards
+`GuestIdentitySelector` and `ResponseControl` render as controlled React inputs. An interaction that
+happens before hydration is ignored and the next render restores the controlled value.
 
-Would need another server query, and the polish phase was scoped to presentation and semantics only.
+Unlike a text-entry hydration race, this does not lose submitted data: no request is sent and the
+control visibly returns to its previous state. Changing this behavior would need careful
+cross-browser radio semantics and accessibility regression coverage.
 
-### 6. Guest-link reset lists every participant
+### Finalized dashboard cards show the leader, not the chosen option
 
-The server accepts a reset for any participant, and the snapshot carries no field distinguishing
-manager-linked ones, so the UI cannot filter them out without a server change. Guarded with a two-step
-inline confirm instead.
+Dashboard cards display the leading option calculated from responses. A finalized card does not
+separately query and label the appointment's selected final option. Adding that distinction requires
+extending the dashboard query and its public result type.
 
----
+### Guest-link reset lists every participant
 
-## Worth knowing
+The management panel offers reset-link controls for every participant. The appointment snapshot does
+not distinguish guest-only participants from manager-linked participants, so the UI cannot filter
+the list without a server contract change. Reset remains guarded by a two-step inline confirmation.
 
-### 7. `npm test` reports 16 failed *files* while every test passes
+## Tooling and build notes
 
-Vitest collects the `e2e/*.spec.ts` Playwright specs, which it cannot run — one collection error per
-spec file. Pre-existing, unrelated to the redesign, and cosmetic; it makes `npm test` exit non-zero.
-Fixable with an `include`/`exclude` in a vitest config. The test count is the signal: **1152 passed**.
+### Use an explicit Vitest exclusion for unit-only runs
 
-### 8. The production build now needs font-CDN egress
+`npm test` invokes `vitest run`, which also discovers the 16 Playwright specification files under
+`e2e/`. Vitest cannot execute those files and exits non-zero with collection errors even when every
+unit test passes.
 
-`next/font/google` fetches Archivo and IBM Plex Mono at build time and self-hosts them into the image,
-so nothing is requested from a third party at runtime. But `npm run build` now needs
-`fonts.googleapis.com` in addition to the npm registry, and under Turbopack a font fetch failure is
-**fatal with no retry and no timeout**. If an air-gapped build is ever needed: vendor the woff2 files
-under `src/app/fonts/` and switch `layout.tsx` to `next/font/local` with the same `variable` names —
-no other file changes, because everything flows through `--font-archivo` and `--font-plex-mono`.
+Use this command for a clean unit-only run:
 
-### 9. WebKit does not wrap around the last radio
+```bash
+npx vitest run --exclude 'e2e/**'
+```
 
-Arrow keys move between the Yes / No / Unanswered radios in every engine, but WebKit does not wrap from
-the last one — and `Unanswered` is last in DOM order, so `ArrowRight` from it does nothing there.
-Native, pre-existing, identical before and after the redesign. `board-a11y.spec.ts` uses Space on
-WebKit and asserts the arrow path strictly on Chromium and Firefox.
+A future cleanup can encode that exclusion in the default Vitest configuration or package script.
 
-### 10. `board-a11y.spec.ts` seeds through the API, not the composer
+### Production builds need Google Fonts egress
 
-That was originally load-bearing — the composer's pre-hydration bug made creation fail under WebKit.
-It is belt-and-braces since `58b28b2`, but leaving it alone keeps an engine gate for the board from
-depending on the creation surface.
+`next/font/google` fetches Archivo and IBM Plex Mono during `npm run build`, then self-hosts the font
+files in the output. No font request is made to Google at runtime, but the build needs access to
+`fonts.googleapis.com` and its font assets.
 
-### 11. Two traps that the automated gates cannot see
+For an air-gapped build, vendor the WOFF2 files under `src/app/fonts/` and switch
+`src/app/layout.tsx` to `next/font/local`, preserving the `--font-archivo` and `--font-plex-mono`
+variables used by the CSS token system.
 
-Both cost real defects during this work; treat them as standing rules.
+### SQLite deployment remains single-instance
 
-- **Automated overflow probes are blind to native date/time inputs.** Chromium compresses their
-  shadow DOM instead of overflowing, so `scrollWidth > clientWidth` never fires even when the value is
-  visibly truncated. Only a rendered image catches it.
-- **Screenshot populated states, not empty ones.** Every defect that escaped the gates in this project
-  was found by looking at a state that had content in it — a board with answers, a chip carrying its
-  own time, a co-organizer list with entries. The empty surface passes while the populated one is
-  broken.
+The database runs in WAL mode and must live on local disk. Do not run multiple application replicas
+against the same file or place it on a network filesystem.
 
-### 12. `.editGlyph` shows as an axe *incomplete*, not a violation
+Back up through SQLite so committed data still in the write-ahead log is included:
 
-"Element content contains only non-text characters" on the ✎ pencil. The span is `aria-hidden="true"`
-and the control carries its own accessible name; axe simply cannot compute contrast for non-text
-content. Not a defect — recorded so nobody chases it.
+```bash
+sqlite3 /path/to/appointly.sqlite ".backup /path/to/backup.sqlite"
+```
 
----
+## Browser and accessibility notes
 
-## Reference
+### WebKit does not wrap from the last response radio
 
-- Full plan, decisions and measurements: `/root/.claude/plans/ancient-napping-harbor.md`
-- Variant study with all five prototypes and their measured click and scroll counts:
-  https://claude.ai/code/artifact/58465c94-f764-4160-a419-c88415368787
-- Database backups from both deploys: `/opt/appointly-backups/`
-- Rollback: `git revert <sha>` then
-  `docker compose -f compose.yaml -f compose.production.yaml up -d --build`. No schema changed at any
-  point, so the database is untouched either way. **Never `git clean -xfd`** — `.env` is untracked and
-  holds the live auth, guest-token and Google OAuth secrets.
+Arrow keys move between the Yes, No, and Unanswered radios in all tested engines, but Playwright's
+WebKit build does not wrap from the last radio back to the first. `e2e/board-a11y.spec.ts` therefore
+uses Space for that WebKit path while keeping arrow-key assertions for Chromium and Firefox.
+
+This is native radio-group behavior rather than an Appointly-specific keyboard handler.
+
+### The board accessibility spec seeds through the API
+
+`e2e/board-a11y.spec.ts` creates its appointment through the same-origin API instead of driving the
+composer. This keeps a cross-engine board gate independent from the creation surface and makes a
+failure easier to attribute.
+
+### Overflow probes cannot replace visual review
+
+Chromium may compress the shadow DOM of native date and time controls rather than report horizontal
+overflow. A `scrollWidth > clientWidth` check can therefore pass while a visible value is truncated.
+Keep rendered-image review in the release checklist, especially for populated states.
+
+### The edit glyph can produce an axe “incomplete” result
+
+The decorative pencil glyph (`.editGlyph`) is `aria-hidden`, while its button has a textual accessible
+name. Axe may report “Element content contains only non-text characters” as **incomplete** because it
+cannot calculate contrast for that glyph. This is not an accessibility violation by itself; verify
+that the surrounding control retains its accessible name and visible focus treatment.
+
+## Keeping this file current
+
+- Record only facts that are reproducible from the repository.
+- Put installation-specific deploy and backup details in that installation's private runbook.
+- Re-run the baseline commands before changing test counts.
+- Remove resolved points instead of preserving a chronological implementation diary.
