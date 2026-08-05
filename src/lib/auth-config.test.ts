@@ -13,6 +13,7 @@ const env = {
   BETTER_AUTH_SECRET: "better-auth-secret",
   GOOGLE_CLIENT_ID: "google-client-id",
   GOOGLE_CLIENT_SECRET: "google-client-secret",
+  GOOGLE_AUTH_ENABLED: true,
 };
 
 describe("isE2EAuthEnabled", () => {
@@ -75,5 +76,16 @@ describe("buildAuthOptions", () => {
       emailAndPassword: { enabled: false },
       advanced: { useSecureCookies: true },
     });
+  });
+
+  it("does not configure Google when login is disabled", () => {
+    const database = {} as NonNullable<BetterAuthOptions["database"]>;
+
+    expect(buildAuthOptions({
+      env: { ...env, GOOGLE_AUTH_ENABLED: false },
+      database,
+      nodeEnv: "development",
+      e2eAuth: undefined,
+    }).socialProviders).toEqual({});
   });
 });

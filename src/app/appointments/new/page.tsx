@@ -2,18 +2,22 @@ import { AppointmentComposer } from "../../../features/appointments/AppointmentC
 import { ownerDisplayNameFromIdentity } from "../../../features/appointments/creation-owner-default";
 
 import { requireOrganizer } from "../../../lib/organizer-access";
+import { getEnv } from "../../../lib/env";
 import { SignOutButton } from "../../_components/SignOutButton";
 import { TopBar } from "../../_components/TopBar";
 import styles from "../../routes.module.css";
 
+export const dynamic = "force-dynamic";
+
 export default async function NewAppointmentPage() {
+  const googleAuthEnabled = getEnv().GOOGLE_AUTH_ENABLED;
   const identity = await requireOrganizer("/appointments/new");
 
   return (
     <div className={styles.page}>
       <TopBar
         links={[{ href: "/dashboard", label: "Dashboard" }]}
-        end={<SignOutButton />}
+        end={googleAuthEnabled ? <SignOutButton /> : undefined}
       />
 
       <main className={styles.main}>

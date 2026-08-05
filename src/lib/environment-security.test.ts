@@ -102,6 +102,32 @@ describe("required environment values", () => {
   );
 });
 
+describe("GOOGLE_AUTH_ENABLED", () => {
+  it("defaults to enabled", () => {
+    expect(parseEnv(validSource()).GOOGLE_AUTH_ENABLED).toBe(true);
+  });
+
+  it("allows missing Google credentials when disabled", () => {
+    const source = validSource();
+    source.GOOGLE_AUTH_ENABLED = "false";
+    delete source.GOOGLE_CLIENT_ID;
+    delete source.GOOGLE_CLIENT_SECRET;
+
+    expect(parseEnv(source)).toMatchObject({
+      GOOGLE_AUTH_ENABLED: false,
+      GOOGLE_CLIENT_ID: "",
+      GOOGLE_CLIENT_SECRET: "",
+    });
+  });
+
+  it.each(["1", "yes", "TRUE", ""])("rejects %j", (configured) => {
+    expect(() => parseEnv({
+      ...validSource(),
+      GOOGLE_AUTH_ENABLED: configured,
+    })).toThrow(/GOOGLE_AUTH_ENABLED/);
+  });
+});
+
 describe("base64url secrets", () => {
   it.each(["BETTER_AUTH_SECRET", "GUEST_TOKEN_SECRET"] as const)(
     "accepts an unpadded %s that decodes to 32 bytes",
@@ -292,6 +318,7 @@ describe("HMAC security", () => {
     "GUEST_TOKEN_SECRET",
     "GOOGLE_CLIENT_ID",
     "GOOGLE_CLIENT_SECRET",
+    "GOOGLE_AUTH_ENABLED",
     "DATABASE_PATH",
     "TRUST_PROXY",
   ] as const;

@@ -24,6 +24,7 @@ describe("playwright.config", () => {
           GUEST_TOKEN_SECRET: "ICEiIyQlJicoKSorLC0uLzAxMjM0NTY3ODk6Ozw9Pj8",
           GOOGLE_CLIENT_ID: "appointly-e2e-google-client",
           GOOGLE_CLIENT_SECRET: "appointly-e2e-google-secret",
+          GOOGLE_AUTH_ENABLED: "true",
           TRUST_PROXY: "false",
         },
       },

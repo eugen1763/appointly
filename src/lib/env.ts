@@ -8,6 +8,7 @@ export interface RuntimeEnv {
   readonly GUEST_TOKEN_SECRET: string;
   readonly GOOGLE_CLIENT_ID: string;
   readonly GOOGLE_CLIENT_SECRET: string;
+  readonly GOOGLE_AUTH_ENABLED: boolean;
   readonly DATABASE_PATH: string;
   readonly TRUST_PROXY: boolean;
 }
@@ -17,6 +18,7 @@ type EnvironmentName =
   | "GUEST_TOKEN_SECRET"
   | "GOOGLE_CLIENT_ID"
   | "GOOGLE_CLIENT_SECRET"
+  | "GOOGLE_AUTH_ENABLED"
   | "DATABASE_PATH"
   | "TRUST_PROXY";
 
@@ -65,6 +67,13 @@ function parseTrustProxy(source: NodeJS.ProcessEnv): boolean {
   }
   return value === "true";
 }
+function parseGoogleAuthEnabled(source: NodeJS.ProcessEnv): boolean {
+  const value = source.GOOGLE_AUTH_ENABLED ?? "true";
+  if (value !== "true" && value !== "false") {
+    throw new Error("GOOGLE_AUTH_ENABLED must be exactly true or false");
+  }
+  return value === "true";
+}
 function validateDatabasePath(source: NodeJS.ProcessEnv): string {
   const value = requireValue(source, "DATABASE_PATH");
   const absolutePath = resolve(value);
@@ -87,6 +96,7 @@ function validateDatabasePath(source: NodeJS.ProcessEnv): string {
 
 export function parseEnv(source: NodeJS.ProcessEnv): RuntimeEnv {
   const configuredAppUrl = requireValue(source, "APP_URL");
+  const googleAuthEnabled = parseGoogleAuthEnabled(source);
 
   let appUrl: URL;
   try {
@@ -112,8 +122,13 @@ export function parseEnv(source: NodeJS.ProcessEnv): RuntimeEnv {
     appOrigin: appUrl.origin,
     BETTER_AUTH_SECRET: validateSecret(source, "BETTER_AUTH_SECRET"),
     GUEST_TOKEN_SECRET: validateSecret(source, "GUEST_TOKEN_SECRET"),
-    GOOGLE_CLIENT_ID: requireValue(source, "GOOGLE_CLIENT_ID"),
-    GOOGLE_CLIENT_SECRET: requireValue(source, "GOOGLE_CLIENT_SECRET"),
+    GOOGLE_CLIENT_ID: googleAuthEnabled
+      ? requireValue(source, "GOOGLE_CLIENT_ID")
+      : (source.GOOGLE_CLIENT_ID ?? ""),
+    GOOGLE_CLIENT_SECRET: googleAuthEnabled
+      ? requireValue(source, "GOOGLE_CLIENT_SECRET")
+      : (source.GOOGLE_CLIENT_SECRET ?? ""),
+    GOOGLE_AUTH_ENABLED: googleAuthEnabled,
     DATABASE_PATH: validateDatabasePath(source),
     TRUST_PROXY: parseTrustProxy(source),
   };

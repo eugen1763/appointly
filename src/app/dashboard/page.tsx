@@ -10,9 +10,12 @@ import {
 } from "../../features/appointments/server/management";
 import { productionServiceContext } from "../../features/appointments/server/production-service-context";
 import { requireOrganizer } from "../../lib/organizer-access";
+import { getEnv } from "../../lib/env";
 import { SignOutButton } from "../_components/SignOutButton";
 import { TopBar } from "../_components/TopBar";
 import styles from "../routes.module.css";
+
+export const dynamic = "force-dynamic";
 
 const TYPE_LABELS: Record<DashboardAppointment["type"], string> = {
   DATE: "Day",
@@ -37,6 +40,7 @@ const updatedAtFormatter = new Intl.DateTimeFormat("en", {
 });
 
 export default async function DashboardPage() {
+  const googleAuthEnabled = getEnv().GOOGLE_AUTH_ENABLED;
   const organizer = await requireOrganizer("/dashboard");
   bindPendingManagersForDashboard(productionServiceContext, organizer);
   const { appointments } = listDashboardAppointments(productionServiceContext, {
@@ -47,7 +51,7 @@ export default async function DashboardPage() {
     <div className={styles.page}>
       <TopBar
         links={[{ href: "/", label: "Home" }]}
-        end={<SignOutButton />}
+        end={googleAuthEnabled ? <SignOutButton /> : undefined}
       />
 
       <main className={styles.main}>

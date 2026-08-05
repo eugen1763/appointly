@@ -25,6 +25,7 @@ vi.mock("./env", () => ({
     BETTER_AUTH_SECRET: "better-auth-secret",
     GOOGLE_CLIENT_ID: "google-client-id",
     GOOGLE_CLIENT_SECRET: "google-client-secret",
+    GOOGLE_AUTH_ENABLED: true,
   })),
 }));
 import { authDatabaseSchema } from "./auth-config";

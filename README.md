@@ -3,16 +3,17 @@
 Self-hosted group scheduling. Put the possible times on one board, watch the answers land live, and
 lock the winner. Guests answer from a link — no account, no thread.
 
-An organizer signs in with Google and creates an appointment carrying a handful of candidate times.
-Everyone else opens one public link, gives their name, and marks each option Yes or No. Answers
-appear for everyone in real time. When a winner is clear, the organizer finalizes it.
+An organizer creates an appointment carrying a handful of candidate times, either after signing in
+with Google or directly on a trusted internal instance. Everyone else opens one public link, gives
+their name, and marks each option Yes or No. Answers appear for everyone in real time. When a winner
+is clear, the organizer finalizes it.
 
 ---
 
 ## Requirements
 
 - **Node 24.x** (`.nvmrc` pins it)
-- A **Google OAuth client** — organizers sign in with Google; guests never need an account
+- A **Google OAuth client** when Google login is enabled; guests never need an account
 - Nothing else. Storage is a local **SQLite** file.
 
 ## Quick start
@@ -26,14 +27,15 @@ npm run dev               # http://localhost:3000
 
 ### Configuration
 
-Every variable in `.env` is required except where noted.
+Every variable in `.env` is required except Google credentials when login is disabled.
 
 | Variable | What it is |
 |---|---|
 | `APP_URL` | The origin this instance is served from. Used for OAuth callbacks, the public links it hands out, and an exact origin check on every mutating request. |
 | `BETTER_AUTH_SECRET` | Signing secret for organizer sessions. |
 | `GUEST_TOKEN_SECRET` | Signing secret for guest edit links. Rotating it invalidates every outstanding guest link. |
-| `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | From your Google OAuth client. |
+| `GOOGLE_AUTH_ENABLED` | Set `false` for a shared internal/development instance where anyone can create and manage appointments without signing in. Defaults to `true`. |
+| `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | From your Google OAuth client. Required only when `GOOGLE_AUTH_ENABLED=true`. |
 | `DATABASE_PATH` | Where the SQLite file lives. Defaults to `./data/appointly.sqlite`. |
 | `TRUST_PROXY` | Set `true` only when running behind a reverse proxy that sets `X-Forwarded-*`. Default `false`. |
 
@@ -44,6 +46,10 @@ openssl rand -base64 32 | tr '+/' '-_' | tr -d '='
 ```
 
 The Google OAuth callback is `${APP_URL}/api/auth/callback/google`.
+
+With `GOOGLE_AUTH_ENABLED=false`, every visitor uses one shared internal organizer identity. This is
+intended only for trusted internal networks and local development: anyone who can reach the instance
+can see the dashboard and manage every appointment owned by that shared identity.
 
 ---
 

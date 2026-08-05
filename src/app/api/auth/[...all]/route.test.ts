@@ -21,6 +21,7 @@ beforeAll(async () => {
     GUEST_TOKEN_SECRET: "AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8",
     GOOGLE_CLIENT_ID: "google-client-id",
     GOOGLE_CLIENT_SECRET: "google-client-secret",
+    GOOGLE_AUTH_ENABLED: "true",
     DATABASE_PATH: join(testDirectory, "auth.sqlite"),
     TRUST_PROXY: "false",
   });

@@ -1,4 +1,6 @@
 import { safeReturnPath } from "../../lib/return-path";
+import { getEnv } from "../../lib/env";
+import { redirect } from "next/navigation";
 import { AvailabilityStrip } from "../_components/AvailabilityStrip";
 import { TopBar } from "../_components/TopBar";
 import styles from "../routes.module.css";
@@ -12,6 +14,7 @@ interface SignInPageProps {
 
 export default async function SignInPage({ searchParams }: SignInPageProps) {
   const returnTo = safeReturnPath((await searchParams).returnTo, "/dashboard");
+  if (!getEnv().GOOGLE_AUTH_ENABLED) redirect(returnTo);
 
   return (
     <div className={styles.page}>

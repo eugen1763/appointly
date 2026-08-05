@@ -7,10 +7,12 @@ const {
   bindPendingManagersForDashboard,
   listDashboardAppointments,
   requireOrganizer,
+  getEnv,
 } = vi.hoisted(() => ({
   bindPendingManagersForDashboard: vi.fn(),
   listDashboardAppointments: vi.fn(),
   requireOrganizer: vi.fn(),
+  getEnv: vi.fn(),
 }));
 
 vi.mock("../../features/appointments/server/management", () => ({
@@ -21,6 +23,7 @@ vi.mock("../../features/appointments/server/production-service-context", () => (
   productionServiceContext: { db: "dashboard-test-db" },
 }));
 vi.mock("../../lib/organizer-access", () => ({ requireOrganizer }));
+vi.mock("../../lib/env", () => ({ getEnv }));
 vi.mock("../../lib/auth-client", () => ({
   authClient: { signOut: vi.fn() },
 }));
@@ -71,6 +74,7 @@ function occurrences(haystack: string, needle: string): number {
 beforeEach(() => {
   vi.clearAllMocks();
   requireOrganizer.mockResolvedValue(ORGANIZER);
+  getEnv.mockReturnValue({ GOOGLE_AUTH_ENABLED: true });
 });
 
 describe("dashboard cards", () => {

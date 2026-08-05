@@ -7,6 +7,7 @@ export interface AuthConfigEnvironment {
   readonly BETTER_AUTH_SECRET: string;
   readonly GOOGLE_CLIENT_ID: string;
   readonly GOOGLE_CLIENT_SECRET: string;
+  readonly GOOGLE_AUTH_ENABLED: boolean;
 }
 
 export const authDatabaseSchema = {
@@ -45,12 +46,14 @@ export function buildAuthOptions({
     secret: env.BETTER_AUTH_SECRET,
     trustedOrigins: [env.APP_URL],
     database,
-    socialProviders: {
-      google: {
-        clientId: env.GOOGLE_CLIENT_ID,
-        clientSecret: env.GOOGLE_CLIENT_SECRET,
-      },
-    },
+    socialProviders: env.GOOGLE_AUTH_ENABLED
+      ? {
+          google: {
+            clientId: env.GOOGLE_CLIENT_ID,
+            clientSecret: env.GOOGLE_CLIENT_SECRET,
+          },
+        }
+      : {},
     emailAndPassword: {
       enabled: isE2EAuthEnabled(nodeEnv, e2eAuth),
     },

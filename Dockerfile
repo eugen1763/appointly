@@ -18,6 +18,7 @@ RUN mkdir -p public drizzle \
     && APP_URL=http://localhost:3000 \
     BETTER_AUTH_SECRET=AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8 \
     GUEST_TOKEN_SECRET=ICEiIyQlJicoKSorLC0uLzAxMjM0NTY3ODk6Ozw9Pj8 \
+    GOOGLE_AUTH_ENABLED=true \
     GOOGLE_CLIENT_ID=build-google-client \
     GOOGLE_CLIENT_SECRET=build-google-secret \
     DATABASE_PATH=/tmp/appointly-build.sqlite \
